@@ -1,0 +1,21 @@
+{
+  "name": "observe",
+  "owner": {
+    "name": "Observe Inc."
+  },
+  "plugins": [
+    {
+      "name": "observe",
+      "source": "./",
+      "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+      "homepage": "https://github.com/observeinc/skills",
+      "repository": "https://github.com/observeinc/skills",
+      "keywords": [
+        "observability",
+        "kubernetes",
+        "aws",
+        "opentelemetry"
+      ]
+    }
+  ]
+}

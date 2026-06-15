@@ -1,0 +1,36 @@
+{
+  "name": "observe",
+  "version": "0.1.0",
+  "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+  "author": {
+    "name": "Observe Inc."
+  },
+  "homepage": "https://github.com/observeinc/skills",
+  "repository": "https://github.com/observeinc/skills",
+  "logo": "https://assets.observeinc.com/assets/observe-cursor-logo.svg",
+  "keywords": [
+    "observability",
+    "kubernetes",
+    "aws",
+    "opentelemetry",
+    "observe"
+  ],
+  "skills": "./skills/",
+  "variables": {
+    "type": "object",
+    "properties": {
+      "OBSERVE_BASE_URL": {
+        "type": "string",
+        "title": "Observe Base URL",
+        "description": "Your Observe base URL (e.g. 101.observeinc.com)"
+      }
+    },
+    "required": ["OBSERVE_BASE_URL"]
+  },
+  "mcpServers": {
+    "observe": {
+      "type": "http",
+      "url": "https://${OBSERVE_BASE_URL}/v1/ai/mcp"
+    }
+  }
+}
