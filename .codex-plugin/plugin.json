@@ -1,0 +1,28 @@
+{
+  "name": "observe",
+  "version": "0.1.0",
+  "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+  "skills": "./skills/",
+  "mcpServers": {
+    "observe": {
+      "type": "http",
+      "url": "https://${OBSERVE_BASE_URL}/v1/ai/mcp"
+    }
+  },
+  "interface": {
+    "displayName": "Observe by Snowflake",
+    "shortDescription": "Observability skills and MCP for Observe",
+    "category": "Productivity"
+  },
+  "variables": {
+    "type": "object",
+    "properties": {
+      "OBSERVE_BASE_URL": {
+        "type": "string",
+        "title": "Observe Base URL",
+        "description": "Your Observe base URL (e.g. 101.observeinc.com)"
+      }
+    },
+    "required": ["OBSERVE_BASE_URL"]
+  }
+}

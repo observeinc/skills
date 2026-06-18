@@ -1,0 +1,14 @@
+[
+  {
+    "name": "observe",
+    "source": {
+      "source": "github",
+      "repo": "observeinc/skills"
+    },
+    "policy": {
+      "installation": "AVAILABLE",
+      "authentication": "ON_INSTALL"
+    },
+    "category": "Productivity"
+  }
+]
