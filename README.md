@@ -78,10 +78,9 @@ These skills work with any agent that supports the SKILL.md format:
 ```
 .
 ├── .claude-plugin/plugin.json   # Claude Code plugin manifest
-├── .cortex-plugin/plugin.json   # Cortex Code plugin manifest
 ├── .cursor-plugin/plugin.json   # Cursor plugin manifest
 ├── .codex-plugin/plugin.json    # Codex plugin manifest (skills only)
-├── .mcp.json                    # MCP server definitions (Claude Code, Cortex Code)
+├── .mcp.json                    # MCP server definitions (Claude Code)
 └── skills/
     ├── alert-investigation/     # Entry point
     │   └── SKILL.md
