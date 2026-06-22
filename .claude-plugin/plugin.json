@@ -16,12 +16,19 @@
     "opentelemetry",
     "observe"
   ],
+  "skills": "./skills/",
   "userConfig": {
     "observeBaseUrl": {
       "type": "string",
       "title": "Observe Base URL",
       "description": "Your Observe base URL (e.g. 101.observeinc.com)",
       "required": true
+    }
+  },
+  "mcpServers": {
+    "observe": {
+      "type": "http",
+      "url": "https://${user_config.observeBaseUrl}/v1/ai/mcp"
     }
   }
 }
