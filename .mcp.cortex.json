@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "observe": {
+      "type": "http",
+      "url": "https://${OBSERVE_BASE_URL}/v1/ai/mcp"
+    }
+  }
+}

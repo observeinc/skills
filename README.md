@@ -18,6 +18,15 @@ claude plugin install observe@observe
 
 The plugin bundles the Observe MCP server, which needs your **Observe base URL** (e.g. `101.observeinc.com`).
 
+### Cortex Code
+
+```bash
+# Run from the repo directory with your Observe base URL
+OBSERVE_BASE_URL=<your-base-url> cortex
+```
+
+On first run, Cortex will prompt you to complete OAuth in your browser to connect the Observe MCP server. The MCP server and skills are configured automatically from the `.cortex-plugin` directory.
+
 ### Codex
 
 Install the skills, then add the Observe MCP server as a separate step:
