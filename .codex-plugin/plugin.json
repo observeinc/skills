@@ -3,10 +3,9 @@
   "version": "0.1.0",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Observe by Snowflake",
-    "shortDescription": "Observability skills and MCP for Observe",
+    "shortDescription": "Observability skills for Observe",
     "category": "Productivity"
   }
 }
