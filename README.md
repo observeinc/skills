@@ -14,6 +14,20 @@ claude plugin marketplace add observeinc/skills
 claude plugin install observe@observe
 ```
 
+### Codex
+
+Codex installs the skills through the Agent Skills standard, and the Observe MCP server is added as a separate one-time step. (Codex does not substitute a base URL into a bundled MCP config, so the server is configured directly instead.)
+
+```bash
+# Install the skills
+npx skills add observeinc/skills
+
+# Add the Observe MCP server — replace <your-base-url> with your Observe host (e.g. 101.observeinc.com)
+codex mcp add observe --url https://<your-base-url>/v1/ai/mcp
+```
+
+The MCP server is stored in your global `~/.codex/config.toml`, so it persists across skill updates and reinstalls. To remove it later, run `codex mcp remove observe`.
+
 ### Other agents
 
 ```bash
@@ -65,6 +79,7 @@ These skills work with any agent that supports the SKILL.md format:
 .
 ├── .claude-plugin/plugin.json   # Claude Code plugin manifest
 ├── .cursor-plugin/plugin.json   # Cursor plugin manifest
+├── .codex-plugin/plugin.json    # Codex plugin manifest (skills only)
 ├── .mcp.json                    # MCP server definitions (Claude Code)
 └── skills/
     ├── alert-investigation/     # Entry point
