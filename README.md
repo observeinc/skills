@@ -1,10 +1,8 @@
 # Observe Skills
 
-> Agent skills that let any AI coding agent investigate and manage your [Observe](https://www.observeinc.com) data.
+Agent skills that let any AI coding agent investigate and manage your [Observe](https://www.observeinc.com) data.
 
-Observe is an observability platform for logs, metrics, and traces. These skills teach your AI coding agent how to work with it — investigating incidents, querying telemetry, onboarding data, and building visualizations.
-
-They follow the [Agent Skills](https://agentskills.io/home) standard and are distributed via [`vercel-labs/skills`](https://github.com/vercel-labs/skills).
+Observe is an observability platform for logs, metrics, and traces. These skills teach your AI coding agent how to work with it — investigating incidents, querying telemetry, onboarding data, building visualizations, and more.
 
 ## Install
 
@@ -49,14 +47,14 @@ npx skills add observeinc/skills -s <skill-name>
 
 ## Compatibility
 
-These skills work with any agent that supports the SKILL.md format, including:
+These skills work with any agent that supports the [Agent Skills](https://agentskills.io/home) standard, including:
 
 - Claude Code
 - Cursor
 - Codex
 - OpenCode
 - Windsurf
-- Any agent supporting `npx skills add`
+- [...and more](https://github.com/vercel-labs/skills#supported-agents)
 
 ## License
 
