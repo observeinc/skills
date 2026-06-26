@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/observeinc/skills",
   "repository": "https://github.com/observeinc/skills",
-  "logo": "https://assets.observeinc.com/assets/observe-cursor-logo.svg",
+  "logo": "assets/logo.svg",
   "keywords": [
     "observability",
     "kubernetes",
