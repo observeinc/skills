@@ -1,0 +1,15 @@
+{
+  "name": "observe",
+  "displayName": "Observe by Snowflake",
+  "version": "0.1.0",
+  "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+  "author": {
+    "name": "Observe Inc.",
+    "url": "https://observeinc.com"
+  },
+  "homepage": "https://github.com/observeinc/skills",
+  "repository": "https://github.com/observeinc/skills",
+  "keywords": ["observability", "kubernetes", "aws", "opentelemetry", "observe"],
+  "skills": "./skills/",
+  "mcpServers": "./.cortex-plugin/.mcp.cortex.json"
+}
