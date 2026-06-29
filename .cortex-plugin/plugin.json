@@ -11,5 +11,5 @@
   "repository": "https://github.com/observeinc/skills",
   "keywords": ["observability", "kubernetes", "aws", "opentelemetry", "observe"],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.cortex.json"
+  "mcpServers": "./.cortex-plugin/.mcp.cortex.json"
 }
