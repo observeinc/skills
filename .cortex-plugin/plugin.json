@@ -4,8 +4,8 @@
   "version": "0.1.0",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
   "author": {
-    "name": "Observe Inc.",
-    "url": "https://observeinc.com"
+    "name": "Observe by Snowflake",
+    "url": "https://www.snowflake.com/observe"
   },
   "homepage": "https://github.com/observeinc/skills",
   "repository": "https://github.com/observeinc/skills",
