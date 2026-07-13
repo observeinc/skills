@@ -3,11 +3,11 @@
 ## Workflow
 
 1. Identify the transform needed:
-    - Parsing JSON/text/KV data → see **Semistructured Data Parsing** (use the decision tree below)
-    - Base64, URI encoding/decoding, or string manipulation → see **Encoding, Decoding, and String Utilities**
-    - Reshaping rows↔columns → see **Pivot / Unpivot**
-    - Per-row computation over related rows (rank, lag, moving avg) → see **Window Functions**
-    - Duration/timestamp math → load [opal-duration](opal-duration.md)
+   - Parsing JSON/text/KV data → see **Semistructured Data Parsing** (use the decision tree below)
+   - Base64, URI encoding/decoding, or string manipulation → see **Encoding, Decoding, and String Utilities**
+   - Reshaping rows↔columns → see **Pivot / Unpivot**
+   - Per-row computation over related rows (rank, lag, moving avg) → see **Window Functions**
+   - Duration/timestamp math → load [opal-duration](opal-duration.md)
 2. For parsing: determine the data shape (JSON string, nested object, structured text, key=value) and pick the matching tool from the decision tree.
 3. For window functions: always specify `group_by()` for partitioning and `order_by()` for row ordering.
 
@@ -81,24 +81,24 @@ Output: one row per leaf. `_path` is the dot-separated key path, `_value` is var
 
 ### Object manipulation
 
--   `drop_fields(obj, "field1", "field2")` — remove fields
--   `make_fields(obj, "key", value, ...)` — add fields
--   `make_object("key1", val1, "key2", val2)` — create from scratch
--   `merge_objects(obj1, obj2)` — combine (later wins on conflict)
--   `object_keys(obj)` — array of top-level key names
--   `pick_fields(obj, "field1", "field2")` — keep only named fields
--   `get_field(obj, field_name_col)` — dynamic field access
+- `drop_fields(obj, "field1", "field2")` — remove fields
+- `make_fields(obj, "key", value, ...)` — add fields
+- `make_object("key1", val1, "key2", val2)` — create from scratch
+- `merge_objects(obj1, obj2)` — combine (later wins on conflict)
+- `object_keys(obj)` — array of top-level key names
+- `pick_fields(obj, "field1", "field2")` — keep only named fields
+- `get_field(obj, field_name_col)` — dynamic field access
 
 ### Array operations
 
--   `split(str, ",")` — string to array
--   `array_length(arr)` — count elements
--   `array_to_string(arr, ", ")` — join to string
--   `array_contains(arr, "value")` — membership test
--   `array_distinct(arr)` — deduplicate
--   `concat_arrays(a, b)` — merge arrays
--   `make_array(val1, val2, ...)` — construct from values
--   `get_item(arr, 0)` — zero-based index (null if out of bounds)
+- `split(str, ",")` — string to array
+- `array_length(arr)` — count elements
+- `array_to_string(arr, ", ")` — join to string
+- `array_contains(arr, "value")` — membership test
+- `array_distinct(arr)` — deduplicate
+- `concat_arrays(a, b)` — merge arrays
+- `make_array(val1, val2, ...)` — construct from values
+- `get_item(arr, 0)` — zero-based index (null if out of bounds)
 
 ---
 
@@ -108,36 +108,36 @@ OPAL function names do NOT follow other languages. Use `decode_base64` not `base
 
 ### Encoding / Decoding
 
--   `decode_base64(str [, urlSafe [, ignorePadding]])` — Decode base64 string. Set urlSafe=true for URL-safe variant, ignorePadding=true to tolerate missing padding.
--   `encode_base64(str [, urlSafe])` — Encode string to base64. Set urlSafe=true for URL-safe variant.
--   `decode_uri(str)` — Decode percent-encoded URI (preserves #$&+,/:;=?@).
--   `decode_uri_component(str)` — Decode all percent-encoded sequences.
--   `encode_uri(str)` — Percent-encode a URI string.
--   `encode_uri_component(str)` — Percent-encode all special characters.
--   `parse_hex(hexstr)` — Parse hex string to int64.
+- `decode_base64(str [, urlSafe [, ignorePadding]])` — Decode base64 string. Set urlSafe=true for URL-safe variant, ignorePadding=true to tolerate missing padding.
+- `encode_base64(str [, urlSafe])` — Encode string to base64. Set urlSafe=true for URL-safe variant.
+- `decode_uri(str)` — Decode percent-encoded URI (preserves #$&+,/:;=?@).
+- `decode_uri_component(str)` — Decode all percent-encoded sequences.
+- `encode_uri(str)` — Percent-encode a URI string.
+- `encode_uri_component(str)` — Percent-encode all special characters.
+- `parse_hex(hexstr)` — Parse hex string to int64.
 
-    make_col decoded:decode_base64(string(encoded_field))
-    make_col decoded_url_safe:decode_base64(string(encoded_field), true)
-    make_col clean_path:decode_uri_component(string(url_path))
+  make_col decoded:decode_base64(string(encoded_field))
+  make_col decoded_url_safe:decode_base64(string(encoded_field), true)
+  make_col clean_path:decode_uri_component(string(url_path))
 
 ### String utilities
 
--   `concat_strings(str, ...)` — Concatenate strings (variadic).
--   `strlen(str)` — String length.
--   `upper(str)` / `lower(str)` — Case conversion.
--   `trim(str)` / `ltrim(str)` / `rtrim(str)` — Remove whitespace (leading, trailing, or both).
--   `left(str, n)` / `right(str, n)` — Leftmost/rightmost n characters.
--   `substring(str, start [, length])` — Extract substring (1-based start index).
--   `position(haystack, needle)` — Find first occurrence index (0 if not found).
--   `replace(str, old, new)` — Replace all occurrences of substring.
--   `replace_regex(str, pattern, replacement)` — Replace all regex matches.
--   `split_part(str, delimiter, part)` — Split and return Nth part (1-based).
--   `starts_with(str, prefix)` / `ends_with(str, suffix)` — Prefix/suffix test (returns bool).
--   `hash(str, ...)` — Signed 64-bit hash of one or more values.
+- `concat_strings(str, ...)` — Concatenate strings (variadic).
+- `strlen(str)` — String length.
+- `upper(str)` / `lower(str)` — Case conversion.
+- `trim(str)` / `ltrim(str)` / `rtrim(str)` — Remove whitespace (leading, trailing, or both).
+- `left(str, n)` / `right(str, n)` — Leftmost/rightmost n characters.
+- `substring(str, start [, length])` — Extract substring (1-based start index).
+- `position(haystack, needle)` — Find first occurrence index (0 if not found).
+- `replace(str, old, new)` — Replace all occurrences of substring.
+- `replace_regex(str, pattern, replacement)` — Replace all regex matches.
+- `split_part(str, delimiter, part)` — Split and return Nth part (1-based).
+- `starts_with(str, prefix)` / `ends_with(str, suffix)` — Prefix/suffix test (returns bool).
+- `hash(str, ...)` — Signed 64-bit hash of one or more values.
 
-    make_col name_lower:lower(string(name))
-    make_col first_segment:split_part(string(path), "/", 1)
-    make_col display:concat_strings(string(first_name), " ", string(last_name))
+  make_col name_lower:lower(string(name))
+  make_col first_segment:split_part(string(path), "/", 1)
+  make_col display:concat_strings(string(first_name), " ", string(last_name))
 
 ---
 
@@ -151,10 +151,10 @@ OPAL function names do NOT follow other languages. Use `decode_base64` not `base
 
 Rules:
 
--   Each source column may be renamed at most once
--   Cannot rename valid-from/valid-to columns — use `set_valid_from`/`set_valid_to` first
--   Cannot overwrite primary-key columns on Resources
--   Overwriting an existing column name removes the old column
+- Each source column may be renamed at most once
+- Cannot rename valid-from/valid-to columns — use `set_valid_from`/`set_valid_to` first
+- Cannot overwrite primary-key columns on Resources
+- Overwriting an existing column name removes the old column
 
 ### drop_col — remove specific columns
 
@@ -162,10 +162,10 @@ Rules:
 
 Rules:
 
--   Cannot drop valid-from/valid-to columns
--   On Resources, cannot drop primary key columns until they are removed from the key
--   Pipeline must retain at least one column
--   For keeping a subset instead, use `pick_col`
+- Cannot drop valid-from/valid-to columns
+- On Resources, cannot drop primary key columns until they are removed from the key
+- Pipeline must retain at least one column
+- For keeping a subset instead, use `pick_col`
 
 ---
 
@@ -220,9 +220,9 @@ Window functions compute per-row values based on related rows without collapsing
 
 ### Ranking
 
--   `row_number()` — Sequential index within group.
--   `rank()` — Rank with gaps for ties.
--   `dense_rank()` — Rank without gaps.
+- `row_number()` — Sequential index within group.
+- `rank()` — Rank with gaps for ties.
+- `dense_rank()` — Rank without gaps.
 
 Top-N slowest spans per service:
 
@@ -232,9 +232,9 @@ Top-N slowest spans per service:
 
 ### Navigation (lag/lead)
 
--   `lag(col, N)` — Value from N rows before.
--   `lead(col, N)` — Value from N rows after.
--   `first(col)` / `last(col)` — First/last value in ordered group.
+- `lag(col, N)` — Value from N rows before.
+- `lead(col, N)` — Value from N rows after.
+- `first(col)` / `last(col)` — First/last value in ordered group.
 
 Delta from previous row:
 
@@ -248,10 +248,10 @@ Delta from previous row:
 
 ### Frame functions
 
--   `frame(back:duration)` — Sliding window looking back.
--   `frame_exact(back:duration)` — Exact sliding window (more expensive).
--   `frame_preceding()` — All rows from start to current (cumulative).
--   `frame_following()` — Current through end of window.
+- `frame(back:duration)` — Sliding window looking back.
+- `frame_exact(back:duration)` — Exact sliding window (more expensive).
+- `frame_preceding()` — All rows from start to current (cumulative).
+- `frame_following()` — Current through end of window.
 
 ### Rolling windows on datasets
 
@@ -263,9 +263,9 @@ For **metric datasets**, first use `align` + `aggregate` from [opal-metrics](opa
 
 ### Limitations
 
--   **No row-based frames.** OPAL only supports time-based frames.
--   **No true cumulative sums.** Use `frame_preceding()` for approximate running sums.
--   Any aggregate can be a window function: `avg`, `sum`, `count`, `min`, `max`, `stddev`, `median`, `percentile`.
+- **No row-based frames.** OPAL only supports time-based frames.
+- **No true cumulative sums.** Use `frame_preceding()` for approximate running sums.
+- Any aggregate can be a window function: `avg`, `sum`, `count`, `min`, `max`, `stddev`, `median`, `percentile`.
 
 ---
 

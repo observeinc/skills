@@ -4,17 +4,17 @@
 
 Use when the question asks for comparisons, rankings, totals, or KPIs. This is the DEFAULT.
 
--   Keywords: "by service", "compare", "which service", "top N", "error rate", "how many", "what is the p99", "summary", "breakdown"
--   Spans/logs: `statsby ... group_by(dimension)`
--   Metrics: `align options(bins: 1), val:sum(m("x"))` then `aggregate total:sum(val), group_by(dimension)`
+- Keywords: "by service", "compare", "which service", "top N", "error rate", "how many", "what is the p99", "summary", "breakdown"
+- Spans/logs: `statsby ... group_by(dimension)`
+- Metrics: `align options(bins: 1), val:sum(m("x"))` then `aggregate total:sum(val), group_by(dimension)`
 
 ## Per-timestamp — aggregation without time bucketing
 
 Use when you want to aggregate at each point along the timeline without merging rows into fixed-width bins. Preserves the input's temporal kind (Event, Interval, or Resource).
 
--   Keywords: "at each timestamp", "per-event", "point-by-point", "without bucketing", "per observation"
--   Spans/logs: `timestats ProcessCount:count(), group_by(service_name)`
--   When `group_by` is omitted, default grouping is the input's primary key (often per-entity per-timestamp)
+- Keywords: "at each timestamp", "per-event", "point-by-point", "without bucketing", "per observation"
+- Spans/logs: `timestats ProcessCount:count(), group_by(service_name)`
+- When `group_by` is omitted, default grouping is the input's primary key (often per-entity per-timestamp)
 
 `timestats` vs `timechart`: `timechart` merges rows into fixed bins (e.g., 5m buckets); `timestats` keeps each original timestamp and computes aggregates at that instant. Use `timestats` when you need the native event cadence without artificial binning.
 
@@ -22,17 +22,17 @@ Use when you want to aggregate at each point along the timeline without merging 
 
 Use ONLY when the question explicitly asks for trends, charts, or time-bucketed data.
 
--   Keywords: "over time", "trend", "time series", "chart", "hourly", "daily", "weekly", "per hour", "per minute", "per day", "per week", "progression", "pattern over time"
--   Spans/logs: `timechart 5m, count:count(), group_by(dimension)`
--   Metrics: `align 5m, val:sum(m("x"))` then `aggregate total:sum(val), group_by(dimension)`
+- Keywords: "over time", "trend", "time series", "chart", "hourly", "daily", "weekly", "per hour", "per minute", "per day", "per week", "progression", "pattern over time"
+- Spans/logs: `timechart 5m, count:count(), group_by(dimension)`
+- Metrics: `align 5m, val:sum(m("x"))` then `aggregate total:sum(val), group_by(dimension)`
 
 ## Rolling window / moving aggregate — smoothed time-series
 
 Use when the question asks for a rolling, sliding, or moving calculation over a time window. A rolling window produces a time-series where each point is computed from a lookback window (e.g., "7-day rolling average"). This is NOT a summary — it is a time-series with smoothing. Also load [opal-metrics](opal-metrics.md) if the source is a metric dataset.
 
--   Keywords: "rolling", "sliding", "moving average", "N-day average", "N-day rate", "7-day", "30-day", "rolling window"
--   Spans/logs: `timechart <interval>, frame(back:<window>), agg:func(), group_by(dim)` — `frame()` is a direct positional argument to `timechart`
--   Metrics: `align <interval>, ...` then `aggregate ..., group_by(dim)` then `make_col smoothed:window(avg(col), group_by(dim), frame(back:<window>))`
+- Keywords: "rolling", "sliding", "moving average", "N-day average", "N-day rate", "7-day", "30-day", "rolling window"
+- Spans/logs: `timechart <interval>, frame(back:<window>), agg:func(), group_by(dim)` — `frame()` is a direct positional argument to `timechart`
+- Metrics: `align <interval>, ...` then `aggregate ..., group_by(dim)` then `make_col smoothed:window(avg(col), group_by(dim), frame(back:<window>))`
 
 ### Spans/logs — native `timechart frame()`
 
@@ -106,9 +106,9 @@ For event datasets, use `count_distinct(entity_column)`. For counter metrics, us
 
 When generating a time-series or rolling window query grouped by a dimension:
 
--   **High-cardinality dimensions** (pod name, host, container, trace ID) can produce hundreds of series, making charts unreadable and queries slow. Ask the user to scope to specific entities, or pre-filter to the most active using a two-phase approach: first aggregate to find top-N entities, then query the time-series for those entities.
--   **Low-cardinality dimensions** (service name, namespace, cluster, region, status code) are usually safe to group by directly.
--   When unsure about cardinality, add a brief note in the query card summary suggesting the user narrow the filter if the chart is too busy.
+- **High-cardinality dimensions** (pod name, host, container, trace ID) can produce hundreds of series, making charts unreadable and queries slow. Ask the user to scope to specific entities, or pre-filter to the most active using a two-phase approach: first aggregate to find top-N entities, then query the time-series for those entities.
+- **Low-cardinality dimensions** (service name, namespace, cluster, region, status code) are usually safe to group by directly.
+- When unsure about cardinality, add a brief note in the query card summary suggesting the user narrow the filter if the chart is too busy.
 
 ---
 
@@ -136,11 +136,11 @@ When a question involves counting operational occurrences, you MUST determine wh
 **Decision tree — for each concept in the question:**
 
 1. Does a `_total` or `_count` counter metric exist for this concept?
-    - **YES** → Use the counter metric with `delta_monotonic`. Examples: restarts (`_restarts_total`), errors (`_errors_total`), requests (`_requests_total`), OOM kills (`_oom_kills_total`), bytes transferred.
-    - **NO** → Continue to step 2.
+   - **YES** → Use the counter metric with `delta_monotonic`. Examples: restarts (`_restarts_total`), errors (`_errors_total`), requests (`_requests_total`), OOM kills (`_oom_kills_total`), bytes transferred.
+   - **NO** → Continue to step 2.
 2. Is the concept a discrete, categorical event with a reason/type field?
-    - **YES** → Use the event dataset filtered by reason/type. Examples: scheduled, evicted, deployed, pulled.
-    - **NO** → Search for alternative data sources or ask the user.
+   - **YES** → Use the event dataset filtered by reason/type. Examples: scheduled, evicted, deployed, pulled.
+   - **NO** → Search for alternative data sources or ask the user.
 
 **Do NOT use event reason strings as proxies for counter-based operations.** Event reasons are categorical labels that don't map 1:1 to operational counts. For example, an Event with reason "Killing" fires during normal rollouts — not just crashes — and "BackOff" only covers CrashLoopBackOff, not all restart scenarios. If a counter metric exists for the concept (e.g., `_restarts_total`), always prefer it.
 

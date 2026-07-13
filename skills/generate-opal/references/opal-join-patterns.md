@@ -4,11 +4,11 @@
 
 1. Identify the datasets to combine (confirm the dataset IDs and schemas).
 2. Determine what you need from the join:
-    - Only filtering rows (no extra columns) → use `exists` / `not_exists`
-    - Enriching events with Resource/Table metadata → use `lookup`
-    - Combining columns from two Event datasets → use `join` / `leftjoin`
-    - All rows from both sides → use `fulljoin`
-    - Temporal event sequencing → use `follow` / `follow_not`
+   - Only filtering rows (no extra columns) → use `exists` / `not_exists`
+   - Enriching events with Resource/Table metadata → use `lookup`
+   - Combining columns from two Event datasets → use `join` / `leftjoin`
+   - All rows from both sides → use `fulljoin`
+   - Temporal event sequencing → use `follow` / `follow_not`
 3. Always pick the cheapest join type that works (see cost hierarchy below).
 4. Use `on(local_col = @"input_name".remote_col)` syntax for all join predicates. For multi-key joins, use `and`: `on(col1 = @"input".key1 and col2 = @"input".key2)`. Use `@"input_name".column` for column bindings.
 5. **Use input names, not dataset IDs.** `@"input_name"` must match the `inputName` from your GetQueryCard `inputs` parameter — never use the raw numeric dataset ID. For example, if your inputs include `{inputName: "customer", datasetId: "41007202"}`, write `@"customer".field`, not `@"41007202".field`. Always quote the reference: `@"input_name"` — bare `@id` fails when the ID is numeric or contains special characters.
@@ -45,10 +45,10 @@ Full pattern:
 
 Rules:
 
--   **`lookup` requires the join key to be a primary or candidate key on the target dataset.** If the column you're joining on is NOT in the target dataset's `primaryKey` array, `lookup` will fail with `"target columns [...] must constitute a candidate/primary key"`. In that case, use `leftjoin` instead — it has no primary key constraint.
--   lookup returns null for unmatched rows (left join behavior)
--   Multiple lookup columns: `lookup on(src = @"ref".key), col1:@"ref".a, col2:@"ref".b`
--   Only use lookup with Resource or Table datasets. For Event↔Event, use `join`/`leftjoin`.
+- **`lookup` requires the join key to be a primary or candidate key on the target dataset.** If the column you're joining on is NOT in the target dataset's `primaryKey` array, `lookup` will fail with `"target columns [...] must constitute a candidate/primary key"`. In that case, use `leftjoin` instead — it has no primary key constraint.
+- lookup returns null for unmatched rows (left join behavior)
+- Multiple lookup columns: `lookup on(src = @"ref".key), col1:@"ref".a, col2:@"ref".b`
+- Only use lookup with Resource or Table datasets. For Event↔Event, use `join`/`leftjoin`.
 
 ## exists / not_exists — semi-join and anti-join
 
@@ -78,8 +78,8 @@ Returns only rows that match on both sides. Adds columns from the right side.
 
     join on(service_name = @"other_dataset".service_name), remote_col:@"other_dataset".value
 
--   For Event↔Event joins: simple equality join
--   For Event↔Resource/Interval joins: temporal point-in-interval join
+- For Event↔Event joins: simple equality join
+- For Event↔Resource/Interval joins: temporal point-in-interval join
 
 ## leftjoin — preserve all left-side rows
 
@@ -119,9 +119,9 @@ Unions rows from a second **Event** dataset whose timestamps fall within the giv
 
 **Syntax:** `surrounding frame(...), @dataset_ref, [const_binding]*`
 
--   First argument: `frame(back: ..., ahead: ...)` — the temporal window
--   Second argument: bare dataset reference (e.g., `@"measurements"`) — NOT an `on(...)` predicate
--   Optional trailing arguments: `name: constant` bindings that add const columns to the **left** input only (right-side rows get `null` for these)
+- First argument: `frame(back: ..., ahead: ...)` — the temporal window
+- Second argument: bare dataset reference (e.g., `@"measurements"`) — NOT an `on(...)` predicate
+- Optional trailing arguments: `name: constant` bindings that add const columns to the **left** input only (right-side rows get `null` for these)
 
 Column names and types are merged across both inputs (like `union`). No column projection from the right side — all columns come through automatically.
 
@@ -140,8 +140,8 @@ Enriches rows with geographic data from Observe's built-in IP geolocation tables
 
 Rules:
 
--   First argument must be an `ipv4` expression (use `ipv4(string(col))` if the column is not already ipv4 typed)
--   Column bindings must reference `@ip_info` with qualified paths (e.g., `@ip_info.geo.city`) — bare `@ip_info` is not allowed
+- First argument must be an `ipv4` expression (use `ipv4(string(col))` if the column is not already ipv4 typed)
+- Column bindings must reference `@ip_info` with qualified paths (e.g., `@ip_info.geo.city`) — bare `@ip_info` is not allowed
 
 ## update_resource — enrich Resource with Event data
 
@@ -149,9 +149,9 @@ Builds new columns on a Resource dataset by matching each resource row to Event 
 
 **Syntax:** `update_resource [options(expiry: duration)]?, key_predicate+, column_binding+`
 
--   Default input must be a Resource; the additional dataset must be Events
--   Key predicates use `eq(local_col, @"events".remote_col)` syntax and must cover a full primary or candidate key
--   Column bindings add new columns: `new_col:@"events".expr` — cannot overwrite existing resource columns
+- Default input must be a Resource; the additional dataset must be Events
+- Key predicates use `eq(local_col, @"events".remote_col)` syntax and must cover a full primary or candidate key
+- Column bindings add new columns: `new_col:@"events".expr` — cannot overwrite existing resource columns
 
 Example:
 
@@ -219,8 +219,8 @@ Instead, join the primary dataset to a reference dataset (Resource or Table kind
 
 ### Key rules
 
--   **Never guess names from identifiers.** A hostname like `acme-prod-1` does not reliably map to customer "Acme" — the reference dataset is the source of truth.
--   Filter out nulls after the join (`filter not is_null(resolved_name)`) if you only want entities that exist in the reference dataset.
+- **Never guess names from identifiers.** A hostname like `acme-prod-1` does not reliably map to customer "Acme" — the reference dataset is the source of truth.
+- Filter out nulls after the join (`filter not is_null(resolved_name)`) if you only want entities that exist in the reference dataset.
 
 ---
 
@@ -256,12 +256,12 @@ The only exception is joining two non-temporal results (e.g., two subquery outpu
 
 ## Common pitfalls
 
--   **Using `on(...)` with `exists`/`not_exists`/`follow`/`follow_not`** — These verbs take bare boolean predicates, NOT `on(...)`. Use `on(...)` only with `join`/`leftjoin`/`fulljoin`/`lookup`.
--   **Using `join` when `exists` suffices** — Use `exists`/`not_exists` if you only need to filter.
--   **Using `lookup` for Event↔Event** — Use `join`/`leftjoin`; `lookup` is for Resource/Table.
--   **Using `lookup` on a non-primary-key column** — `lookup` requires the target join column to be a primary key. Check the target dataset's `primaryKey` array — if the column isn't there, use `leftjoin` instead.
--   **Forgetting temporal semantics** — Event↔Resource join matches by event time within resource validity.
--   **Wrong direction: exists vs follow** — `exists` keeps left rows; `follow` returns right rows.
--   **Joining after `statsby` to a temporal dataset** — Move the join BEFORE `statsby` — after `statsby` the result is non-temporal and cannot `leftjoin`/`fulljoin` with Resource/Interval datasets.
--   **Using `fulljoin` with Event↔non-Event** — `fulljoin` is rejected when exactly one side is Event and the other is not. Use `leftjoin` or `join` instead.
--   **Missing `frame()` on semi-joins** — `exists`/`not_exists`/`follow`/`follow_not` without `frame()` treat the right side as non-temporal within the query window. Provide `frame()` for temporal band matching.
+- **Using `on(...)` with `exists`/`not_exists`/`follow`/`follow_not`** — These verbs take bare boolean predicates, NOT `on(...)`. Use `on(...)` only with `join`/`leftjoin`/`fulljoin`/`lookup`.
+- **Using `join` when `exists` suffices** — Use `exists`/`not_exists` if you only need to filter.
+- **Using `lookup` for Event↔Event** — Use `join`/`leftjoin`; `lookup` is for Resource/Table.
+- **Using `lookup` on a non-primary-key column** — `lookup` requires the target join column to be a primary key. Check the target dataset's `primaryKey` array — if the column isn't there, use `leftjoin` instead.
+- **Forgetting temporal semantics** — Event↔Resource join matches by event time within resource validity.
+- **Wrong direction: exists vs follow** — `exists` keeps left rows; `follow` returns right rows.
+- **Joining after `statsby` to a temporal dataset** — Move the join BEFORE `statsby` — after `statsby` the result is non-temporal and cannot `leftjoin`/`fulljoin` with Resource/Interval datasets.
+- **Using `fulljoin` with Event↔non-Event** — `fulljoin` is rejected when exactly one side is Event and the other is not. Use `leftjoin` or `join` instead.
+- **Missing `frame()` on semi-joins** — `exists`/`not_exists`/`follow`/`follow_not` without `frame()` treat the right side as non-temporal within the query window. Provide `frame()` for temporal band matching.

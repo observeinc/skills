@@ -30,17 +30,17 @@ Always read the phi coefficient together with `frequency_in_bad_cohort` (a.k.a. 
 
 Not every high-phi value is meaningful. Filter down to values that are semantically interpretable in observability:
 
--   Error / exception types (`TimeoutException`, `NullPointerException`, `500`, `503`)
--   Service / component names that suggest a failing service
--   Resource attributes (host, container, pod, region, AZ) that suggest infra issues
--   Database operations / endpoints / route patterns
--   Feature flags, deployment IDs, build versions
+- Error / exception types (`TimeoutException`, `NullPointerException`, `500`, `503`)
+- Service / component names that suggest a failing service
+- Resource attributes (host, container, pod, region, AZ) that suggest infra issues
+- Database operations / endpoints / route patterns
+- Feature flags, deployment IDs, build versions
 
 Skip very high cardinality unique-per-request identifiers — they are rarely root causes:
 
--   `request_id`, `trace_id`, `span_id`, `correlation_id`
--   `user_id`, `session_id` (unless the question is about a single user)
--   UUIDs, hashes, signed-URL tokens
+- `request_id`, `trace_id`, `span_id`, `correlation_id`
+- `user_id`, `session_id` (unless the question is about a single user)
+- UUIDs, hashes, signed-URL tokens
 
 ## Recommended response format
 
@@ -70,19 +70,19 @@ Two or three sentences synthesizing the table into a hypothesis.
 
 Concrete actions, each tied to an investigation a human can run:
 
--   Drill into `service.name = payment-api` traces in `us-west-2` for the last hour.
--   Check recent deployments / config changes for the payment service in that region.
--   Compare `payment-api` p99 latency in `us-west-2` vs other regions.
+- Drill into `service.name = payment-api` traces in `us-west-2` for the last hour.
+- Check recent deployments / config changes for the payment service in that region.
+- Compare `payment-api` p99 latency in `us-west-2` vs other regions.
 
 If the host environment provides capabilities to run these follow-ups (e.g., creating query cards, running additional traces), surface them as actionable suggestions.
 
 ## Common pitfalls when interpreting
 
--   **All values come from one field** — if every top-N row is `attributes.<something>`, propose narrowing future analyses with a `fieldFilter` to surface secondary correlations.
--   **Empty / `__empty__` paths** — these come from the empty-fix step and indicate that complex field was null/empty for some rows. Treat as a real signal: "missing X correlates with bad behavior."
--   **Identical phi across many rows** — usually means those values co-occur perfectly (single underlying event); collapse them in the narrative.
--   **Tiny `total_bad` or `total_good`** — the cohort is too small for stable statistics. Tell the user and suggest broadening the time range.
--   **All values have phi near 0** — there is no statistical correlation; the bad behavior is uniformly distributed. Recommend changing the threshold or the time window.
+- **All values come from one field** — if every top-N row is `attributes.<something>`, propose narrowing future analyses with a `fieldFilter` to surface secondary correlations.
+- **Empty / `__empty__` paths** — these come from the empty-fix step and indicate that complex field was null/empty for some rows. Treat as a real signal: "missing X correlates with bad behavior."
+- **Identical phi across many rows** — usually means those values co-occur perfectly (single underlying event); collapse them in the narrative.
+- **Tiny `total_bad` or `total_good`** — the cohort is too small for stable statistics. Tell the user and suggest broadening the time range.
+- **All values have phi near 0** — there is no statistical correlation; the bad behavior is uniformly distributed. Recommend changing the threshold or the time window.
 
 ## Worked example
 

@@ -13,13 +13,13 @@ You MUST load `generate-opal` first. The templates below assume its rules: `@."C
 
 ## Inputs (resolved by Steps 1-2 of the skill)
 
--   `thresholdField` — the field that defines bad behavior (e.g., `duration`, `latency`, the aligned metric column).
--   `thresholdOperator` — one of `>`, `>=`, `<`, `<=`, `=`, `!=`. Default `>`.
--   `thresholdValue` — numeric / string value to compare against.
--   `scalarFields[]` — string/number/bool fields to analyze.
--   `complexFields[]` — Object / Array fields to flatten and analyze.
--   `fieldFilter` (optional) — `{field, value}` for an upstream `filter` clause.
--   `metricName` (optional) — when present, run the metric-mode prefix.
+- `thresholdField` — the field that defines bad behavior (e.g., `duration`, `latency`, the aligned metric column).
+- `thresholdOperator` — one of `>`, `>=`, `<`, `<=`, `=`, `!=`. Default `>`.
+- `thresholdValue` — numeric / string value to compare against.
+- `scalarFields[]` — string/number/bool fields to analyze.
+- `complexFields[]` — Object / Array fields to flatten and analyze.
+- `fieldFilter` (optional) — `{field, value}` for an upstream `filter` clause.
+- `metricName` (optional) — when present, run the metric-mode prefix.
 
 ## Universal helpers
 
@@ -140,9 +140,9 @@ string(_c__scalar_fields_obj_value), string(_c_attributes_value), string(_c_reso
 
 ### Edge cases
 
--   **Scalar-only input** — omit `{{empty_fix_steps}}` and `{{complex_flatten_steps}}`; only `_scalar_fields_obj` participates in the flatten / group_by / coalesce.
--   **Complex-only input** — omit `{{scalar_obj_step}}` and `{{scalar_flatten_step}}`; group_by / coalesce reference only the complex fields.
--   **Empty input** — abort and ask the user to specify `fieldsToAnalyze`. Never run the pipeline with no fields.
+- **Scalar-only input** — omit `{{empty_fix_steps}}` and `{{complex_flatten_steps}}`; only `_scalar_fields_obj` participates in the flatten / group_by / coalesce.
+- **Complex-only input** — omit `{{scalar_obj_step}}` and `{{scalar_flatten_step}}`; group_by / coalesce reference only the complex fields.
+- **Empty input** — abort and ask the user to specify `fieldsToAnalyze`. Never run the pipeline with no fields.
 
 ## Template — metric mode
 
@@ -187,10 +187,10 @@ limit 50
 
 Notes:
 
--   Do NOT pass `group_by(...)` to `align`. Reference metric tag columns directly after `align` (e.g. `string(labels.k8s_namespace_name)`, `string(labels.image)` for Prometheus, or just `string(k8s_namespace_name)` for OTEL).
--   Use `sum(m(...))` for counters, `avg(m(...))` for gauges, etc. — pick the aggregation that matches the metric's semantics.
--   For native histogram metrics (`m_histogram`), only use `histogram_combine` + `histogram_quantile` when the dataset's metric interface defines `objectValue` for the histogram column. If the engine returns `OB-145: Selecting metric "m_object" requires the "metric" interface to have a objectValue column`, the metric is a Prometheus-style sibling-counter histogram (`_bucket`/`_sum`/`_count`) and there is no native histogram interface to use here — pick a different metric or fall back to dataset mode against the metric's source dataset.
--   The threshold value is numeric and NOT string-quoted (the aligned metric column is numeric).
+- Do NOT pass `group_by(...)` to `align`. Reference metric tag columns directly after `align` (e.g. `string(labels.k8s_namespace_name)`, `string(labels.image)` for Prometheus, or just `string(k8s_namespace_name)` for OTEL).
+- Use `sum(m(...))` for counters, `avg(m(...))` for gauges, etc. — pick the aggregation that matches the metric's semantics.
+- For native histogram metrics (`m_histogram`), only use `histogram_combine` + `histogram_quantile` when the dataset's metric interface defines `objectValue` for the histogram column. If the engine returns `OB-145: Selecting metric "m_object" requires the "metric" interface to have a objectValue column`, the metric is a Prometheus-style sibling-counter histogram (`_bucket`/`_sum`/`_count`) and there is no native histogram interface to use here — pick a different metric or fall back to dataset mode against the metric's source dataset.
+- The threshold value is numeric and NOT string-quoted (the aligned metric column is numeric).
 
 ## Result columns (verbatim)
 
@@ -212,10 +212,10 @@ Do not rename or post-process these columns. Read them as-is when interpreting r
 
 ## Validation checklist before submitting the pipeline
 
--   `generate-opal` is loaded and the OPAL syntax conforms to its rules.
--   Every column reference in `group_by` / `coalesce` matches a `flatten_leaves` output, with sanitized name.
--   For each complex field there is exactly one `make_col` empty-fix step and exactly one `flatten_leaves`.
--   Scalar fields are bundled into `_scalar_fields_obj` with `string(...)` casts before `flatten_leaves`.
--   The `case()` calls in `statsby` use paired `(condition, result)` arguments and the bare value `true` (no SQL `1`).
--   The phi formula is byte-identical to the template.
--   `sort desc(phi)` is followed by `dedup` and `limit 50`.
+- `generate-opal` is loaded and the OPAL syntax conforms to its rules.
+- Every column reference in `group_by` / `coalesce` matches a `flatten_leaves` output, with sanitized name.
+- For each complex field there is exactly one `make_col` empty-fix step and exactly one `flatten_leaves`.
+- Scalar fields are bundled into `_scalar_fields_obj` with `string(...)` casts before `flatten_leaves`.
+- The `case()` calls in `statsby` use paired `(condition, result)` arguments and the bare value `true` (no SQL `1`).
+- The phi formula is byte-identical to the template.
+- `sort desc(phi)` is followed by `dedup` and `limit 50`.

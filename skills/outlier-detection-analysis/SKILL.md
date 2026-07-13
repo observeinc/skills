@@ -9,10 +9,10 @@ Find which field values are statistically correlated with "bad" behavior in any 
 
 The algorithm is generic over data shape. It applies equally to:
 
--   metrics (Prometheus, OTEL, custom) — correlate metric values against tag dimensions
--   structured logs / events — correlate log-level / status / message-class against attributes
--   span / trace data — correlate error or duration against span attributes
--   any dataset with a numeric or categorical "performance" field and one or more candidate dimension fields
+- metrics (Prometheus, OTEL, custom) — correlate metric values against tag dimensions
+- structured logs / events — correlate log-level / status / message-class against attributes
+- span / trace data — correlate error or duration against span attributes
+- any dataset with a numeric or categorical "performance" field and one or more candidate dimension fields
 
 This skill orchestrates three OPAL queries:
 
@@ -80,19 +80,19 @@ The pipeline is non-trivial; do NOT improvise. The phi formula `((a*d) - (b*c)) 
 
 Two rules the template enforces — read [outlier-detection-pipeline](references/outlier-detection-pipeline.md) carefully before composing the OPAL:
 
--   **Field categorization.** Use the rules in [outlier-detection-field-selection](references/outlier-detection-field-selection.md) to split the chosen fields into `scalarFields[]` (string/number/bool) and `complexFields[]` (Object/Array). Never put a complex field into the scalar bundle — the `make_object("name":string(field), …)` step would coerce the entire object to a single string. Scalars are packed into `_scalar_fields_obj` and flattened once; complex fields each get their own empty-object guard and their own `flatten_leaves`.
--   **Always include a scoping `filter`** when the user's question implies one (e.g. `filter service_name = "checkout"`, `filter error = true`). Never invent a filter when the user did not imply one — ask instead.
+- **Field categorization.** Use the rules in [outlier-detection-field-selection](references/outlier-detection-field-selection.md) to split the chosen fields into `scalarFields[]` (string/number/bool) and `complexFields[]` (Object/Array). Never put a complex field into the scalar bundle — the `make_object("name":string(field), …)` step would coerce the entire object to a single string. Scalars are packed into `_scalar_fields_obj` and flattened once; complex fields each get their own empty-object guard and their own `flatten_leaves`.
+- **Always include a scoping `filter`** when the user's question implies one (e.g. `filter service_name = "checkout"`, `filter error = true`). Never invent a filter when the user did not imply one — ask instead.
 
 ### Step 5 — Interpret the results
 
 The pipeline returns one row per `(field, value)` candidate, sorted by `phi` descending and limited to 50 rows. Columns:
 
--   `attribute` — the field name / JSON path (e.g., `service.name`, `db.statement`)
--   `value` — the specific value (e.g., `checkout-service`, `TimeoutException`)
--   `bad_count`, `good_count` — counts of rows in each cohort with this value
--   `total_bad`, `total_good` — totals across the entire query
--   `frequency_in_bad_cohort`, `frequency_in_good_cohort` — fractions (0..1)
--   `phi` — phi coefficient in [-1, 1]
+- `attribute` — the field name / JSON path (e.g., `service.name`, `db.statement`)
+- `value` — the specific value (e.g., `checkout-service`, `TimeoutException`)
+- `bad_count`, `good_count` — counts of rows in each cohort with this value
+- `total_bad`, `total_good` — totals across the entire query
+- `frequency_in_bad_cohort`, `frequency_in_good_cohort` — fractions (0..1)
+- `phi` — phi coefficient in [-1, 1]
 
 Load the [outlier-detection-interpretation](references/outlier-detection-interpretation.md) reference for phi/bad% bands, root-cause framing, and the recommended response structure.
 
@@ -109,15 +109,15 @@ Summarize what was tried (range, threshold, fields, filter) and let the user pic
 
 ## Things to NOT do
 
--   Do not invent dataset IDs, field names, percentile values, threshold operators, or filter values. Ask the user.
--   Do not regenerate the phi formula or rebuild the cohort/window logic from scratch — copy the template.
--   Do not post-process or rename the query result columns. The pipeline already produces the final shape; read the rows directly.
--   Do not include `validFromField` / `validToField` columns in the analysis field list — they are temporal columns, not categorical attributes.
--   Do not include hidden, const, metric-aggregation, or `_`-prefixed fields.
--   Do not analyze more than 10 fields at once — high cardinality kills query performance.
--   Do not skip the empty-object / empty-array guard `make_col` step before `flatten_leaves` for complex fields, otherwise null/empty rows drop out and bias the cohort counts.
--   Do not run on a raw spans / logs dataset without a scoping `filter` when the user's question implies one. If no scope is implied, ask the user.
--   When (and only when) the narrow trace-perspective caveat in Step 1 applies, do not equate "errors on service X" with `filter service_name = "X" and error = true` and do not omit `span_kind` / `span_type` from the analyzed fields — both are easy ways to surface the wrong side of a distributed call. This caveat does not apply to metric, log, or non-trace investigations.
+- Do not invent dataset IDs, field names, percentile values, threshold operators, or filter values. Ask the user.
+- Do not regenerate the phi formula or rebuild the cohort/window logic from scratch — copy the template.
+- Do not post-process or rename the query result columns. The pipeline already produces the final shape; read the rows directly.
+- Do not include `validFromField` / `validToField` columns in the analysis field list — they are temporal columns, not categorical attributes.
+- Do not include hidden, const, metric-aggregation, or `_`-prefixed fields.
+- Do not analyze more than 10 fields at once — high cardinality kills query performance.
+- Do not skip the empty-object / empty-array guard `make_col` step before `flatten_leaves` for complex fields, otherwise null/empty rows drop out and bias the cohort counts.
+- Do not run on a raw spans / logs dataset without a scoping `filter` when the user's question implies one. If no scope is implied, ask the user.
+- When (and only when) the narrow trace-perspective caveat in Step 1 applies, do not equate "errors on service X" with `filter service_name = "X" and error = true` and do not omit `span_kind` / `span_type` from the analyzed fields — both are easy ways to surface the wrong side of a distributed call. This caveat does not apply to metric, log, or non-trace investigations.
 
 ## Output format
 

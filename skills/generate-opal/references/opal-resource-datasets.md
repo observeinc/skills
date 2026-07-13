@@ -40,13 +40,13 @@ To find entities **currently** stuck in a state past a threshold, select current
 
 Key points:
 
--   Use `filter_last` (not `filter`) for the state predicate so only resources whose **current** state is bad are kept; plain `filter` would also return pods that were bad earlier in the window but have recovered
--   `filter_last` keeps the whole resource, so the later `filter state_duration > ...` keeps any interval over the threshold; for a currently-bad pod the open/last interval is the current one
--   Do NOT add `filter is_null(row_end_time())` / `filter is_null(@."Valid To")` — it almost always returns zero rows
--   Duration uses `coalesce(row_end_time(), now())` so rows whose state already ended are measured correctly instead of `now() - row_start_time()` alone
--   `topk` is required instead of `limit` for Resource datasets
--   Retain temporal columns in `pick_col`: `row_start_time()` for valid-from and `row_end_time()` for valid-to
--   Include ALL `primaryKey` columns in `pick_col` — this dataset's primary key is `["name", "namespace", "uid", "clusterUid"]`, so all four must appear. Check the schema's `primaryKey` array for every Resource dataset before writing `pick_col`
+- Use `filter_last` (not `filter`) for the state predicate so only resources whose **current** state is bad are kept; plain `filter` would also return pods that were bad earlier in the window but have recovered
+- `filter_last` keeps the whole resource, so the later `filter state_duration > ...` keeps any interval over the threshold; for a currently-bad pod the open/last interval is the current one
+- Do NOT add `filter is_null(row_end_time())` / `filter is_null(@."Valid To")` — it almost always returns zero rows
+- Duration uses `coalesce(row_end_time(), now())` so rows whose state already ended are measured correctly instead of `now() - row_start_time()` alone
+- `topk` is required instead of `limit` for Resource datasets
+- Retain temporal columns in `pick_col`: `row_start_time()` for valid-from and `row_end_time()` for valid-to
+- Include ALL `primaryKey` columns in `pick_col` — this dataset's primary key is `["name", "namespace", "uid", "clusterUid"]`, so all four must appear. Check the schema's `primaryKey` array for every Resource dataset before writing `pick_col`
 
 ## Worked Example: Stale Resources (Not Updated in 30 Days)
 
@@ -58,10 +58,10 @@ Key points:
 
 Key points:
 
--   Do NOT filter on valid-to (`filter is_null(row_end_time())`) — use `coalesce(row_end_time(), now())` for age so no rows are dropped
--   `30d` is a duration literal expressing 30 days — use literals for day/week thresholds
--   `to_hours(age) / 24` converts the duration to a human-readable day count
--   For full duration reference (constructors, extractors, literals), load [opal-duration](opal-duration.md)
+- Do NOT filter on valid-to (`filter is_null(row_end_time())`) — use `coalesce(row_end_time(), now())` for age so no rows are dropped
+- `30d` is a duration literal expressing 30 days — use literals for day/week thresholds
+- `to_hours(age) / 24` converts the duration to a human-readable day count
+- For full duration reference (constructors, extractors, literals), load [opal-duration](opal-duration.md)
 
 ## filter_last / ever / always / never — Entity-Level Filters
 
@@ -100,9 +100,9 @@ With expiry option (controls how long event-sourced values remain, default 24h):
 
 Key rules:
 
--   Key predicates must cover the full primary key or a candidate key on the resource
--   Column bindings add NEW columns — cannot overwrite existing resource columns
--   For full join pattern reference, load [opal-join-patterns](opal-join-patterns.md)
+- Key predicates must cover the full primary key or a candidate key on the resource
+- Column bindings add NEW columns — cannot overwrite existing resource columns
+- For full join pattern reference, load [opal-join-patterns](opal-join-patterns.md)
 
 ## Dataset Kind Conversion Verbs
 
@@ -144,7 +144,7 @@ On Resource input, `make_event` takes no arguments and produces one row per stat
 
 Many resources have related condition/status datasets that provide richer state information. For example:
 
--   **kubernetes/Pod** tracks pod-level status (Pending, Running, Failed)
--   **kubernetes/Pod Condition** tracks condition-level detail (Ready=false, ContainersReady=false, PodScheduled)
+- **kubernetes/Pod** tracks pod-level status (Pending, Running, Failed)
+- **kubernetes/Pod Condition** tracks condition-level detail (Ready=false, ContainersReady=false, PodScheduled)
 
 When investigating resource state, consider querying both the primary resource dataset AND its condition dataset for a complete picture. Conditions often reveal _why_ an entity is in a bad state (e.g., a pod is Pending because `PodScheduled=false`).

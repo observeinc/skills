@@ -5,14 +5,14 @@
 1. Confirm the dataset has metric interface (check the dataset schema).
 2. Identify metric names from the schema or catalog — never guess metric names.
 3. **Map each metric to its `m_*` function before writing OPAL.** Read the metric's `type` field (e.g., `"gauge"`, `"tdigest"`, `"cumulativeCounter"`). Using the wrong function is a fatal validation error.
-    - `type` = `"gauge"` / `"cumulativeCounter"` / `"delta"` → `m("metric_name")`
-    - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-    - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-    - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+   - `type` = `"gauge"` / `"cumulativeCounter"` / `"delta"` → `m("metric_name")`
+   - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+   - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+   - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
 4. **Verify dimension/tag field names from the dataset schema.** The top-level field that holds metric dimensions varies by dataset — it may be `tags`, `resource_attributes`, `labels`, or something else. NEVER assume `resource_attributes` exists. Check the schema's field list and use only fields that actually exist on the target dataset (see **Dimension Field Names Vary by Dataset** below).
 5. Choose output shape:
-    - Summary (default) → use `align options(bins: 1)` pattern
-    - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
+   - Summary (default) → use `align options(bins: 1)` pattern
+   - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
 6. For distribution metrics (tdigest, histogram, or exponential histogram), use the DOUBLE COMBINE pattern — `histogram_combine` in both `align` and `aggregate`.
 7. For cumulative counters (`type` = `"cumulativeCounter"`), never use `sum()` — use `rate()` or `delta_monotonic()`.
 
@@ -32,15 +32,15 @@ Before writing ANY `align` expression, you MUST check the metric's `type` field 
 
 **Semantic pitfall — "rate" questions need two metrics:**
 
--   When the user asks for a "rate" (e.g., "error rate", "throttle rate"), you need BOTH a numerator metric AND a denominator metric. A single `rate()` gives per-second throughput, not a percentage rate.
+- When the user asks for a "rate" (e.g., "error rate", "throttle rate"), you need BOTH a numerator metric AND a denominator metric. A single `rate()` gives per-second throughput, not a percentage rate.
 
 **Common mistakes from production evals:**
 
--   `rate(m("k8s_container_cpu_node_utilization_ratio"))` — WRONG: metric `type` is `"gauge"`. Use `avg()`.
--   `rate(m("k8s.pod.phase"))` — WRONG: metric `type` is `"gauge"`. Use `last_not_null()`.
--   `avg(m("system.cpu.utilization_percent"))` — WRONG: metric `type` is `"tdigest"`. Must use `histogram_combine(m_tdigest(...))` (DOUBLE COMBINE pattern).
--   `sum(m("kube_job_status_failed"))` with `bins: 1` — WRONG: metric `type` is `"gauge"`. Produces inflated counts (1440/day = one per scrape). Use `last_not_null()` or `max()`.
--   User asks "highest error rates" but agent returns `delta_monotonic(m("Errors"))` — WRONG: that gives counts, not rates. Must divide by `Invocations` to get a rate.
+- `rate(m("k8s_container_cpu_node_utilization_ratio"))` — WRONG: metric `type` is `"gauge"`. Use `avg()`.
+- `rate(m("k8s.pod.phase"))` — WRONG: metric `type` is `"gauge"`. Use `last_not_null()`.
+- `avg(m("system.cpu.utilization_percent"))` — WRONG: metric `type` is `"tdigest"`. Must use `histogram_combine(m_tdigest(...))` (DOUBLE COMBINE pattern).
+- `sum(m("kube_job_status_failed"))` with `bins: 1` — WRONG: metric `type` is `"gauge"`. Produces inflated counts (1440/day = one per scrape). Use `last_not_null()` or `max()`.
+- User asks "highest error rates" but agent returns `delta_monotonic(m("Errors"))` — WRONG: that gives counts, not rates. Must divide by `Invocations` to get a rate.
 
 ---
 
@@ -159,10 +159,10 @@ The metric type also determines which aggregation function to wrap around the `m
 | `tdigest` / `histogram` / `exponentialHistogram` | `histogram_combine()` (DOUBLE COMBINE)         | —                                   | `avg()`, `sum()` — type error; distributions require `histogram_combine`            |
 | unknown / missing `type`                         | `avg()`                                        | —                                   | —                                                                                   |
 
--   `gauge` default is `avg`. Use `last_not_null` for snapshot/state queries (e.g., "is the host up?"), `max`/`min` for peak/trough analysis.
--   `cumulativeCounter` default is `rate`. Use `delta_monotonic` when you need absolute change instead of per-second rate. Never `sum` — it sums raw counter values across a bin, not deltas.
--   `delta` default is `sum`. Use `rate` when the user asks for per-second throughput rather than total change per bin.
--   `rate()` on a gauge will silently treat any value decrease as a counter reset. The query will run without error, but the result will be wrong for metrics that naturally fluctuate (CPU, memory, temperature).
+- `gauge` default is `avg`. Use `last_not_null` for snapshot/state queries (e.g., "is the host up?"), `max`/`min` for peak/trough analysis.
+- `cumulativeCounter` default is `rate`. Use `delta_monotonic` when you need absolute change instead of per-second rate. Never `sum` — it sums raw counter values across a bin, not deltas.
+- `delta` default is `sum`. Use `rate` when the user asks for per-second throughput rather than total change per bin.
+- `rate()` on a gauge will silently treat any value decrease as a counter reset. The query will run without error, but the result will be wrong for metrics that naturally fluctuate (CPU, memory, temperature).
 
 ### align expressions MUST use metric accessors — dimensions go in aggregate group_by
 
@@ -237,10 +237,10 @@ make_col rolling_avg:window(avg(avg_cpu), group_by(host), frame(back:24h))
 
 **Rules:**
 
--   Choose an `align` interval that is finer than the rolling window (e.g., `1h` align for a `7d` window)
--   Use `frame(back:<duration>)` for the lookback — see [opal-transforms](opal-transforms.md) for `frame_exact` and other variants
--   The result is a time-series, not a summary
--   For high-cardinality dimensions, pre-filter to top-N entities or ask the user to scope
+- Choose an `align` interval that is finer than the rolling window (e.g., `1h` align for a `7d` window)
+- Use `frame(back:<duration>)` for the lookback — see [opal-transforms](opal-transforms.md) for `frame_exact` and other variants
+- The result is a time-series, not a summary
+- For high-cardinality dimensions, pre-filter to top-N entities or ask the user to scope
 
 ### Distribution metrics — DOUBLE COMBINE pattern (CRITICAL)
 
@@ -383,9 +383,9 @@ Don't discard metrics just because you already found one that seems sufficient. 
 
 Common complementary pairs:
 
--   Resource usage gauge + condition/status boolean (e.g., memory bytes used vs memory-pressure flag)
--   Absolute counter + utilization ratio (e.g., CPU seconds vs CPU utilization percentage)
--   Request rate + error rate + latency (RED methodology)
+- Resource usage gauge + condition/status boolean (e.g., memory bytes used vs memory-pressure flag)
+- Absolute counter + utilization ratio (e.g., CPU seconds vs CPU utilization percentage)
+- Request rate + error rate + latency (RED methodology)
 
 When multiple categories are available, create a query card for each and synthesize across them in the analysis. A user asking about "pressure" or "saturation" benefits from seeing both the raw utilization and whether the system has flagged it as problematic.
 
@@ -436,16 +436,16 @@ Metrics with `type` = `"cumulativeCounter"` are monotonically increasing (common
 
 ### Never use `sum()` directly on a cumulative counter
 
--   **Per-second rate:** `align rate(m("http_requests_total"))`
--   **Change over window:** `align delta_monotonic(m("http_requests_total"))`
--   **Change over full range:** `align options(bins: 1), change:delta_monotonic(m("http_requests_total"))`
+- **Per-second rate:** `align rate(m("http_requests_total"))`
+- **Change over window:** `align delta_monotonic(m("http_requests_total"))`
+- **Change over full range:** `align options(bins: 1), change:delta_monotonic(m("http_requests_total"))`
 
 ### Quick reference: counter metric functions
 
--   **Per-second rate** — `rate(m("..."))`
--   **Change per window** — `delta_monotonic(m("..."))`
--   **Change over full range** — `delta_monotonic(m("..."))` with `options(bins: 1)`
--   **WRONG** — `sum(m("..."))` on a counter
+- **Per-second rate** — `rate(m("..."))`
+- **Change per window** — `delta_monotonic(m("..."))`
+- **Change over full range** — `delta_monotonic(m("..."))` with `options(bins: 1)`
+- **WRONG** — `sum(m("..."))` on a counter
 
 ## Fill Patterns for Metrics
 
@@ -489,9 +489,9 @@ fill frame(ahead:15m), total:0
 
 Rules for `frame(ahead: ...)`:
 
--   `ahead` must be strictly between zero and one week
--   `ahead` must be at least as large as the alignment step (e.g., `frame(ahead:15m)` for 5m bins)
--   `back` is not used for fill
+- `ahead` must be strictly between zero and one week
+- `ahead` must be at least as large as the alignment step (e.g., `frame(ahead:15m)` for 5m bins)
+- `back` is not used for fill
 
 ### Fill strategies
 
@@ -522,10 +522,10 @@ fill requests:0, avg_latency:float64_null()
 
 When computing percentiles from distribution metrics (tdigest, histogram, exponential histogram), infer the unit from the metric name and value magnitude:
 
--   Metric names with `duration`, `latency`, `response_time` and values >1,000,000 → nanoseconds. Divide by 1,000,000.
--   Metric names with `_ms` or `_milliseconds` → already ms.
--   After computing percentiles, add: `make_col p50_ms:round(p50/1000000, 2), p99_ms:round(p99/1000000, 2)`.
--   `duration_ms(x)` tells Observe to render a number as a duration — it does NOT convert units.
+- Metric names with `duration`, `latency`, `response_time` and values >1,000,000 → nanoseconds. Divide by 1,000,000.
+- Metric names with `_ms` or `_milliseconds` → already ms.
+- After computing percentiles, add: `make_col p50_ms:round(p50/1000000, 2), p99_ms:round(p99/1000000, 2)`.
+- `duration_ms(x)` tells Observe to render a number as a duration — it does NOT convert units.
 
 ## Period-over-Period Comparison — timeshift / timewrap
 
@@ -570,30 +570,30 @@ timewrap 7d, 2, "week"
 
 ## Pitfalls
 
--   **Always name `align` output columns.** Use `name:func(m("..."))`. Auto-generated names are unpredictable.
--   **Use the same name through the pipeline.** Keep the column name consistent across `align`, `aggregate`, and `fill`.
--   **Don't use `timechart` or `count()` for native metric datasets.** Use `align` + `aggregate`. Exception: event-formatted metric datasets (AWS CloudWatch).
--   **`m()` and other metric accessors can ONLY appear inside `align`.** `make_col x:m(...)` is invalid — metric values are extracted exclusively through `align`.
--   **`align` does NOT accept `group_by`.** Dimensions are extracted in `aggregate`'s `group_by()`, never in `align`.
--   **`frame()` is a SEPARATE argument to `align`, NOT an option inside `options()`.** `options()` only accepts `bins`, `min_bin`, and `empty_bins`. To use a sliding window with `align`, pass `frame()` as a positional argument:
+- **Always name `align` output columns.** Use `name:func(m("..."))`. Auto-generated names are unpredictable.
+- **Use the same name through the pipeline.** Keep the column name consistent across `align`, `aggregate`, and `fill`.
+- **Don't use `timechart` or `count()` for native metric datasets.** Use `align` + `aggregate`. Exception: event-formatted metric datasets (AWS CloudWatch).
+- **`m()` and other metric accessors can ONLY appear inside `align`.** `make_col x:m(...)` is invalid — metric values are extracted exclusively through `align`.
+- **`align` does NOT accept `group_by`.** Dimensions are extracted in `aggregate`'s `group_by()`, never in `align`.
+- **`frame()` is a SEPARATE argument to `align`, NOT an option inside `options()`.** `options()` only accepts `bins`, `min_bin`, and `empty_bins`. To use a sliding window with `align`, pass `frame()` as a positional argument:
 
-    ```opal
-    align 1m, frame(back:10m), avg_mem:avg(m("memory_used"))
-    ```
+  ```opal
+  align 1m, frame(back:10m), avg_mem:avg(m("memory_used"))
+  ```
 
-    These are WRONG:
+  These are WRONG:
 
-    ```opal
-    align 1m, options(frame: 10m), avg_mem:avg(m("memory_used"))
-    align options(frame: 7d), val:sum(m("x"))
-    ```
+  ```opal
+  align 1m, options(frame: 10m), avg_mem:avg(m("memory_used"))
+  align options(frame: 7d), val:sum(m("x"))
+  ```
 
--   **`make_col` before `align` is discarded.** `align` resets the column set. If you need a derived column in `aggregate group_by()`, create it AFTER `align`.
--   **Don't use `_c_valid_from` for metric visualizations.** The time column is the one named by `validFromField` in the schema; reference it generically with `row_start_time()` (returns the `validFromField` value) rather than guessing its name.
--   **`group_by()` is required in `aggregate`.** Even for a global aggregate, include `group_by()` with no arguments.
--   **NEVER include temporal columns in any `group_by()`.** The time axis is implicit — each verb handles time bucketing automatically. To get time-series output grouped by a dimension, use `group_by(dimension)` only.
--   **Filter on labels before `align` only for Prometheus-style datasets.** For OTel metrics, filter after `aggregate`.
--   **Use `topk`/`bottomk` after `aggregate` — not `sort` + `limit`.** Always use an aggregate scoring function: `topk 20, max(col)` or `bottomk 10, min(col)`. Never pass a bare column to `topk` — `topk 20, col` is invalid.
--   **Don't `sort` time-series output.** After `align` + `aggregate` (without `options(bins: 1)`), the output is a time series ordered by `valid_from`. Adding `sort desc(value)` scrambles the time axis, breaking chart rendering. Use `sort` only on summary output (`options(bins: 1)`) where each row is a group, not a time bin. For ranking time-series groups, use `topk` instead.
--   **Don't reuse existing column names in `align` or `group_by`.** Check the dataset schema before choosing names. `align` aliases that collide with existing columns cause `"cannot create column X more than once"`. `group_by` aliases that collide cause `"attempting to overwrite existing column"`. For `group_by`, use the bare column name when no casting is needed, or pick a new alias — `group_by(host, datacenter)` is fine, but `group_by(host:string(host))` is rejected because `host` already exists. For `align`, use a distinct alias — `cpu_avg:avg(m("cpu_utilization"))` instead of `cpu:avg(...)` when a `cpu` column already exists.
--   **Don't assume dimension field names.** The top-level field for metric dimensions varies: `tags`, `resource_attributes`, `labels`, `FIELDS`, etc. Using the wrong one (e.g., `resource_attributes` when the dataset has `tags`) causes `"field does not exist"` errors. Always verify from the dataset schema.
+- **`make_col` before `align` is discarded.** `align` resets the column set. If you need a derived column in `aggregate group_by()`, create it AFTER `align`.
+- **Don't use `_c_valid_from` for metric visualizations.** The time column is the one named by `validFromField` in the schema; reference it generically with `row_start_time()` (returns the `validFromField` value) rather than guessing its name.
+- **`group_by()` is required in `aggregate`.** Even for a global aggregate, include `group_by()` with no arguments.
+- **NEVER include temporal columns in any `group_by()`.** The time axis is implicit — each verb handles time bucketing automatically. To get time-series output grouped by a dimension, use `group_by(dimension)` only.
+- **Filter on labels before `align` only for Prometheus-style datasets.** For OTel metrics, filter after `aggregate`.
+- **Use `topk`/`bottomk` after `aggregate` — not `sort` + `limit`.** Always use an aggregate scoring function: `topk 20, max(col)` or `bottomk 10, min(col)`. Never pass a bare column to `topk` — `topk 20, col` is invalid.
+- **Don't `sort` time-series output.** After `align` + `aggregate` (without `options(bins: 1)`), the output is a time series ordered by `valid_from`. Adding `sort desc(value)` scrambles the time axis, breaking chart rendering. Use `sort` only on summary output (`options(bins: 1)`) where each row is a group, not a time bin. For ranking time-series groups, use `topk` instead.
+- **Don't reuse existing column names in `align` or `group_by`.** Check the dataset schema before choosing names. `align` aliases that collide with existing columns cause `"cannot create column X more than once"`. `group_by` aliases that collide cause `"attempting to overwrite existing column"`. For `group_by`, use the bare column name when no casting is needed, or pick a new alias — `group_by(host, datacenter)` is fine, but `group_by(host:string(host))` is rejected because `host` already exists. For `align`, use a distinct alias — `cpu_avg:avg(m("cpu_utilization"))` instead of `cpu:avg(...)` when a `cpu` column already exists.
+- **Don't assume dimension field names.** The top-level field for metric dimensions varies: `tags`, `resource_attributes`, `labels`, `FIELDS`, etc. Using the wrong one (e.g., `resource_attributes` when the dataset has `tags`) causes `"field does not exist"` errors. Always verify from the dataset schema.

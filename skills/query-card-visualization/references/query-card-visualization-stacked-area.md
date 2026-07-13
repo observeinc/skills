@@ -1,14 +1,14 @@
-# barChart
+# stackedArea
 
-JSON schema for the `barChart` visualizationTemplate object. The `visualizationTemplate` value MUST be a single object matching this schema (top-level key `barChart`). Do not write it from memory; emit exactly this shape.
+JSON schema for the `stackedArea` visualizationTemplate object. The `visualizationTemplate` value MUST be a single object matching this schema (top-level key `stackedArea`). Do not write it from memory; emit exactly this shape.
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
-    "barChart": {
-      "description": "Configuration for bar chart visualizations in Vega. Displays data as rectangular bars with heights proportional to the values they represent.",
+    "stackedArea": {
+      "description": "Configuration for stacked area chart visualizations in Vega. Displays multiple series of data stacked on top of each other with filled areas.",
       "type": "object",
       "properties": {
         "x": {
@@ -94,7 +94,7 @@ JSON schema for the `barChart` visualizationTemplate object. The `visualizationT
           ]
         },
         "y": {
-          "description": "The fields to use for the Y-axis. Can include multiple fields to show multiple series of bars.",
+          "description": "The fields to use for the Y-axis. Can include multiple fields to show multiple stacked areas.",
           "type": "array",
           "items": {
             "anyOf": [
@@ -609,15 +609,78 @@ JSON schema for the `barChart` visualizationTemplate object. The `visualizationT
           "required": ["label"],
           "description": "Configuration for the Y-axis. Controls how the Y-axis is displayed and scaled."
         },
-        "barConfig": {
-          "description": "Configuration for bar appearance. Controls how bars are displayed in the chart.",
+        "areaConfig": {
+          "description": "Configuration for area appearance. Controls how areas are displayed in the chart.",
           "type": "object",
           "properties": {
-            "horizontal": {
-              "description": "Whether to swap the X and Y axes. Set to true to create a horizontal bar chart.\n                        This should be false unless explicitly needed.",
+            "showPoints": {
+              "description": "Whether to show points on the area boundaries. Set to true to display markers at each data point.",
               "type": "boolean"
+            },
+            "showValues": {
+              "description": "Whether to show values next to points. Set to true to display data values alongside each point.",
+              "type": "boolean"
+            },
+            "curve": {
+              "description": "The type of curve to use for area boundaries. Controls how points are connected in the area chart.",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "Linear",
+                  "description": "Connects data points with straight lines. The simplest curve type that creates sharp angles between segments."
+                },
+                {
+                  "type": "string",
+                  "const": "Curve",
+                  "description": "Creates a curve that preserves monotonicity. Ensures that if data is increasing/decreasing, the curve will not create artificial peaks or valleys."
+                },
+                {
+                  "type": "string",
+                  "const": "Step",
+                  "description": "Creates a step function curve with steps at the midpoints. Data changes appear as horizontal and vertical lines."
+                }
+              ]
+            },
+            "areaFillType": {
+              "description": "The type of fill to use for areas. Controls the appearance of the filled areas in the chart.",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "const": "Solid",
+                  "description": "Fills areas with solid colors. Creates a consistent, uniform appearance."
+                },
+                {
+                  "type": "string",
+                  "const": "Gradient",
+                  "description": "Fills areas with color gradients. Creates a smooth transition between colors, often used to add depth or visual interest."
+                }
+              ]
             }
           }
+        },
+        "horizontal": {
+          "description": "Whether to swap the X and Y axes. Set to true to create a horizontal stacked area chart.",
+          "type": "boolean"
+        },
+        "stack": {
+          "description": "The stacking method to use. Controls how areas are stacked relative to each other.",
+          "anyOf": [
+            {
+              "type": "string",
+              "const": "zero",
+              "description": "Stacks areas from a baseline at zero. The standard stacking method that shows absolute values."
+            },
+            {
+              "type": "string",
+              "const": "center",
+              "description": "Stacks areas around a center baseline. Useful for showing deviations from a central value."
+            },
+            {
+              "type": "string",
+              "const": "normalize",
+              "description": "Normalizes areas to show percentages. Useful for showing proportions that sum to 100%."
+            }
+          ]
         },
         "legend": {
           "description": "Configuration for the chart legend. Controls the appearance and behavior of the legend.",
@@ -672,6 +735,6 @@ JSON schema for the `barChart` visualizationTemplate object. The `visualizationT
       "required": ["xConfig", "yConfig"]
     }
   },
-  "required": ["barChart"]
+  "required": ["stackedArea"]
 }
 ```

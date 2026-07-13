@@ -10,9 +10,9 @@ For a `tag` or `correlation-tag` parameter, scope a query by adding exactly:
 filter array_contains($paramId, #tagName) or is_null($paramId)
 ```
 
--   `$paramId` — the parameter, referenced with a leading `$`. It must already be declared before the OPAL is dry-run, or the reference fails to compile.
--   `#tagName` — the correlation tag to scope by. It **must be a correlation tag mapped on this card's own input dataset**, not just any tag that exists somewhere in the Knowledge Graph. A `#tag` that is not mapped on the input dataset still compiles, but the filter silently matches nothing and the preview comes back with a `tag "tagName" not found` warning. Pull from KG context; do NOT invent.
--   `or is_null($paramId)` — required. Without it, an unset (empty) parameter blanks the result.
+- `$paramId` — the parameter, referenced with a leading `$`. It must already be declared before the OPAL is dry-run, or the reference fails to compile.
+- `#tagName` — the correlation tag to scope by. It **must be a correlation tag mapped on this card's own input dataset**, not just any tag that exists somewhere in the Knowledge Graph. A `#tag` that is not mapped on the input dataset still compiles, but the filter silently matches nothing and the preview comes back with a `tag "tagName" not found` warning. Pull from KG context; do NOT invent.
+- `or is_null($paramId)` — required. Without it, an unset (empty) parameter blanks the result.
 
 Place the filter line **immediately after the dataset-entry verb(s)** and BEFORE any `align` / `aggregate` / `timechart` — scope before you aggregate.
 
@@ -36,8 +36,8 @@ filter array_contains($cluster, #k8s.cluster.name) or is_null($cluster)
 
 ## Common mistakes
 
--   **Forgetting `or is_null($paramId)`.** An unset parameter → blanks the result.
--   **`#paramId` instead of `$paramId`.** Parameters use `$`; tags use `#`.
--   **Referencing a `$paramId` that was never declared.** Dry-run fails with an undefined-parameter error.
--   **Scoping by a `#tagName` not mapped on the input dataset.** The query compiles but the filter does nothing; the preview returns a `tag "tagName" not found` warning. Confirm the tag is in the dataset's correlation-tag mappings, or pick a real column on the dataset instead.
--   **Putting the filter AFTER `align` / `aggregate` / `timechart`.** Scope belongs before aggregation.
+- **Forgetting `or is_null($paramId)`.** An unset parameter → blanks the result.
+- **`#paramId` instead of `$paramId`.** Parameters use `$`; tags use `#`.
+- **Referencing a `$paramId` that was never declared.** Dry-run fails with an undefined-parameter error.
+- **Scoping by a `#tagName` not mapped on the input dataset.** The query compiles but the filter does nothing; the preview returns a `tag "tagName" not found` warning. Confirm the tag is in the dataset's correlation-tag mappings, or pick a real column on the dataset instead.
+- **Putting the filter AFTER `align` / `aggregate` / `timechart`.** Scope belongs before aggregation.

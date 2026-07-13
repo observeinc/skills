@@ -21,10 +21,10 @@ Regex flags: `(?i)` for case-insensitive, `(?m)` for multiline.
 
 ### String matching overview
 
--   **Substring match** — `contains(col, "text")`
--   **Glob search** — `col ~ "pattern*"` or `col ~ <pattern*>`
--   **Regex match** — `match_regex(col, regex("pattern"))`
--   **Multi-term search** — `search(col, "term")`
+- **Substring match** — `contains(col, "text")`
+- **Glob search** — `col ~ "pattern*"` or `col ~ <pattern*>`
+- **Regex match** — `match_regex(col, regex("pattern"))`
+- **Multi-term search** — `search(col, "term")`
 
 ### match_regex — boolean regex test
 
@@ -55,8 +55,8 @@ NEVER name a capture group after a temporal column (check `validFromField`/`vali
 
 ### get_regex / get_regex_all — extract matched strings
 
--   `get_regex(col, /pattern/)` — single matched string
--   `get_regex_all(col, /pat/)` — array of all matched strings
+- `get_regex(col, /pattern/)` — single matched string
+- `get_regex_all(col, /pat/)` — array of all matched strings
 
 ### replace_regex — regex substitution
 
@@ -91,8 +91,8 @@ If no `[TokenIndex]` tag is visible in the schema, assume the field is not index
 
 The `~` operator has two forms (use only when `[TokenIndex]` is visible on the field):
 
--   **Plain string** (`~ "text"`) — **case-INSENSITIVE** substring match. Use `!~` for negation.
--   **Regex** (`~ /pattern/`) — case-sensitive by default. Add `i` flag for case-insensitive.
+- **Plain string** (`~ "text"`) — **case-INSENSITIVE** substring match. Use `!~` for negation.
+- **Regex** (`~ /pattern/`) — case-sensitive by default. Add `i` flag for case-insensitive.
 
 ---
 

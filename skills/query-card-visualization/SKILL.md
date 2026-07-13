@@ -1,11 +1,11 @@
 ---
 name: query-card-visualization
 description: >
-    How to fill in a query card's `visualizationTemplate` (the JSON object that
-    renders a chart). Load this whenever the user asks for a chart, graph,
-    plot, trend, "show me over time", ranking, single number/KPI, scatter,
-    waterfall, or map. Acts as the directory for the per-chart JSON schemas in
-    its references.
+  How to fill in a query card's `visualizationTemplate` (the JSON object that
+  renders a chart). Load this whenever the user asks for a chart, graph,
+  plot, trend, "show me over time", ranking, single number/KPI, scatter,
+  waterfall, or map. Acts as the directory for the per-chart JSON schemas in
+  its references.
 user-invocable: false
 ---
 
@@ -28,14 +28,22 @@ Each chart type has a self-contained JSON schema in this skill's `references/`
 directory. Read the one that matches the user's intent with the Bash tool, e.g.
 `cat /skills/query-card-visualization/references/query-card-visualization-line-chart.md`.
 
-| Chart type     | Top-level key   | Read reference                                          | Use when                                                               |
-| -------------- | --------------- | ------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Line chart     | `lineChart`     | `references/query-card-visualization-line-chart.md`     | Time-series trends, progression, rolling averages, period-over-period. |
-| Bar chart      | `barChart`      | `references/query-card-visualization-bar-chart.md`      | Categorical comparisons, rankings, top-N, KPIs by group.               |
-| Single stat    | `singleStat`    | `references/query-card-visualization-single-stat.md`    | A single scalar value / KPI.                                           |
-| Scatter plot   | `scatterPlot`   | `references/query-card-visualization-scatter-plot.md`   | Correlation between two numeric dimensions.                            |
-| Waterfall      | `waterfall`     | `references/query-card-visualization-waterfall.md`      | Trace span hierarchies or other nested-operation timing data.          |
-| Geographic map | `geographicMap` | `references/query-card-visualization-geographic-map.md` | Values keyed by country/region/coordinates on a map.                   |
+<!-- BEGIN GENERATED REFERENCE TABLE -->
+
+| Chart type       | Top-level key    | Read reference                                            | Use when                                                                   |
+| ---------------- | ---------------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Line chart       | `lineChart`      | `references/query-card-visualization-line-chart.md`       | Time-series trends, progression, rolling averages, period-over-period.     |
+| Bar chart        | `barChart`       | `references/query-card-visualization-bar-chart.md`        | Categorical comparisons, rankings, top-N, KPIs by group.                   |
+| Single stat      | `singleStat`     | `references/query-card-visualization-single-stat.md`      | A single scalar value / KPI.                                               |
+| Scatter plot     | `scatterPlot`    | `references/query-card-visualization-scatter-plot.md`     | Correlation between two numeric dimensions.                                |
+| Waterfall        | `waterfall`      | `references/query-card-visualization-waterfall.md`        | Trace span hierarchies or other nested-operation timing data.              |
+| Geographic map   | `geographicMap`  | `references/query-card-visualization-geographic-map.md`   | Values keyed by country/region/coordinates on a map.                       |
+| Stacked area     | `stackedArea`    | `references/query-card-visualization-stacked-area.md`     | Part-to-whole trends over time across multiple stacked series.             |
+| Heatmap          | `heatmap`        | `references/query-card-visualization-heatmap.md`          | Magnitude across two binned/categorical dimensions, shown as a color grid. |
+| Top list         | `topList`        | `references/query-card-visualization-top-list.md`         | A ranked list of items by value, with inline bars.                         |
+| Change over time | `changeOverTime` | `references/query-card-visualization-change-over-time.md` | Per-item change in a value between two time periods.                       |
+
+<!-- END GENERATED REFERENCE TABLE -->
 
 If you are unsure which chart type fits, default to a line chart for
 time-bucketed data and a bar chart for one-row-per-category data.

@@ -4,23 +4,23 @@
 
 ### Constructor functions
 
--   `duration_hr(N)` — hours (e.g., `duration_hr(24)` → 24h)
--   `duration_min(N)` — minutes (e.g., `duration_min(15)` → 15m)
--   `duration_sec(N)` — seconds (e.g., `duration_sec(30)` → 30s)
--   `duration_ms(N)` — milliseconds (e.g., `duration_ms(500)` → 500ms)
+- `duration_hr(N)` — hours (e.g., `duration_hr(24)` → 24h)
+- `duration_min(N)` — minutes (e.g., `duration_min(15)` → 15m)
+- `duration_sec(N)` — seconds (e.g., `duration_sec(30)` → 30s)
+- `duration_ms(N)` — milliseconds (e.g., `duration_ms(500)` → 500ms)
 
 ### Duration literals
 
 Literals express any time unit inline without a constructor function:
 
--   `1ns` — nanosecond
--   `1us` — microsecond
--   `1ms` — millisecond
--   `1s` — second
--   `1m` — minute
--   `1h` — hour
--   `1d` — day
--   `1w` — week
+- `1ns` — nanosecond
+- `1us` — microsecond
+- `1ms` — millisecond
+- `1s` — second
+- `1m` — minute
+- `1h` — hour
+- `1d` — day
+- `1w` — week
 
 ### Day and week durations
 
@@ -45,11 +45,11 @@ Equivalently, multiply hours with a constructor:
 
 ## Duration Extraction (to numbers)
 
--   `to_nanoseconds(d)` → int64
--   `to_milliseconds(d)` → float64
--   `to_seconds(d)` → float64
--   `to_minutes(d)` → float64
--   `to_hours(d)` → float64
+- `to_nanoseconds(d)` → int64
+- `to_milliseconds(d)` → float64
+- `to_seconds(d)` → float64
+- `to_minutes(d)` → float64
+- `to_hours(d)` → float64
 
 ---
 
@@ -142,7 +142,7 @@ Format tokens use **Snowflake conventions** (NOT strftime): `YYYY`, `MM`, `DD`, 
 
 ## Common Pitfalls
 
--   Using strftime format (`%Y-%m-%d`) → use Snowflake format: `YYYY-MM-DD`
--   Comparing duration to number → compare durations: `elapsed > duration_sec(5)` not `elapsed > 5`
--   Forgetting `string()` in parse_isotime → `parse_isotime(string(col))`
--   Passing a duration into a constructor → `duration_hr(now() - ts)` is wrong; use `to_hours(now() - ts)` to extract
+- Using strftime format (`%Y-%m-%d`) → use Snowflake format: `YYYY-MM-DD`
+- Comparing duration to number → compare durations: `elapsed > duration_sec(5)` not `elapsed > 5`
+- Forgetting `string()` in parse_isotime → `parse_isotime(string(col))`
+- Passing a duration into a constructor → `duration_hr(now() - ts)` is wrong; use `to_hours(now() - ts)` to extract

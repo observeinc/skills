@@ -4,9 +4,9 @@
 
 1. Confirm the dataset kind is Interval with otel_span interface (check the dataset schema).
 2. Choose the analysis pattern:
-    - Latency analysis → use the latency percentiles pattern below
-    - Error rate → use the error rate pattern below
-    - Dependency mapping → use the dependency tracking patterns below
+   - Latency analysis → use the latency percentiles pattern below
+   - Error rate → use the error rate pattern below
+   - Dependency mapping → use the dependency tracking patterns below
 3. Duration is in nanoseconds — always convert before aggregation.
 4. ALWAYS include `group_by()` in `statsby` — omitting it on Interval datasets explodes into per-span rows.
 5. If the question is better answered by pre-aggregated metrics, consider using [opal-metrics](opal-metrics.md) instead.
@@ -120,9 +120,9 @@ When users ask about traces, spans, and especially **span events**, follow this 
 
 1. **Understand the tracing data model.** Tracing data is typically split across separate datasets:
 
-    - **Span dataset** (e.g., "Tracing/Span") — span attributes, duration, status, service name
-    - **Span Event dataset** (e.g., "Tracing/Span Event") — in-span events like exceptions, logs, annotations
-    - **Trace dataset** (e.g., "Tracing/Trace") — trace-level summaries
+   - **Span dataset** (e.g., "Tracing/Span") — span attributes, duration, status, service name
+   - **Span Event dataset** (e.g., "Tracing/Span Event") — in-span events like exceptions, logs, annotations
+   - **Trace dataset** (e.g., "Tracing/Trace") — trace-level summaries
 
 2. **If the user mentions "span events"**, you **must** query the Span Event dataset. Span events are NOT part of the Span dataset.
 
@@ -132,6 +132,6 @@ When users ask about traces, spans, and especially **span events**, follow this 
 
 When users ask "which services are sending the most data?":
 
--   **Prefer Tracing/Span data** as the default. Counting spans by `service_name` is straightforward.
--   Byte-level metrics require `rate()` or `delta_monotonic()` — harder to get right.
--   If the user specifically asks about bytes/bandwidth, use byte metrics with proper counter aggregation (see [opal-metrics](opal-metrics.md)).
+- **Prefer Tracing/Span data** as the default. Counting spans by `service_name` is straightforward.
+- Byte-level metrics require `rate()` or `delta_monotonic()` — harder to get right.
+- If the user specifically asks about bytes/bandwidth, use byte metrics with proper counter aggregation (see [opal-metrics](opal-metrics.md)).

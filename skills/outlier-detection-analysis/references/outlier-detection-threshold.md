@@ -4,12 +4,12 @@ When the user has not specified an explicit threshold, run this pipeline first t
 
 ## Inputs
 
--   `datasetId` — required.
--   `metricName` — required when computing from a metric (otherwise the pipeline runs over the dataset directly).
--   `performanceField` — required for non-metric mode. Must be a numeric / duration field. Auto-detect from the schema using the names `duration`, `latency`, `response_time`, `request_duration`, `elapsed_time`, `processing_time`, `execution_time`, `bytes`, `response_size`, `request_size`, `status_code`, `status`. If none match, ask the user.
--   `percentileThreshold` — number in `[50, 99.9]`. Default `95`.
--   `fieldFilter` (optional) — `{field, value}` to scope the pipeline.
--   `timeStart`, `timeEnd` — required.
+- `datasetId` — required.
+- `metricName` — required when computing from a metric (otherwise the pipeline runs over the dataset directly).
+- `performanceField` — required for non-metric mode. Must be a numeric / duration field. Auto-detect from the schema using the names `duration`, `latency`, `response_time`, `request_duration`, `elapsed_time`, `processing_time`, `execution_time`, `bytes`, `response_size`, `request_size`, `status_code`, `status`. If none match, ask the user.
+- `percentileThreshold` — number in `[50, 99.9]`. Default `95`.
+- `fieldFilter` (optional) — `{field, value}` to scope the pipeline.
+- `timeStart`, `timeEnd` — required.
 
 If any required input is missing or ambiguous, ask the user before running the pipeline. Do not guess.
 
@@ -69,9 +69,9 @@ value:    <percentile column from result>
 
 P95 is the industry default for performance monitoring because:
 
--   It is robust to a small number of extreme outliers, unlike `mean`.
--   It captures the experience of the vast majority of requests while still flagging the slow tail.
--   It produces a `bad` cohort large enough (~5%) for stable phi-coefficient estimation.
+- It is robust to a small number of extreme outliers, unlike `mean`.
+- It captures the experience of the vast majority of requests while still flagging the slow tail.
+- It produces a `bad` cohort large enough (~5%) for stable phi-coefficient estimation.
 
 If the user said "extremely slow", lean to P99. If they said "any slowness", lean to P75 / P90.
 
