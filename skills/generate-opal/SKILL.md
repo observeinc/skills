@@ -7,6 +7,8 @@ description: >
 user-invocable: false
 ---
 
+Always run `observe skill view generate-opal --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+
 # Core OPAL: pipeline generation, dataset kinds, column selection, routing
 
 This skill provides core OPAL guidance for generating valid Observe OPAL pipelines. It does NOT contain domain-specific patterns for logs, spans, metrics, joins, durations, or other specialized areas — those live in `opal-*` references that MUST be loaded before writing any OPAL.

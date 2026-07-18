@@ -3,6 +3,8 @@ name: outlier-detection-analysis
 description: "Identify which field values correlate with bad behavior (slowness, errors, anomalies, unusual values) using phi-coefficient correlation analysis over OPAL. Works on any time-series data — metrics, structured logs, span/trace data, or any dataset where rows can be split into a 'bad' and 'good' cohort by a threshold. Use when: (1) User asks for root-cause analysis on a dataset or metric (2) User wants to know what attributes / dimensions / values are most associated with a failure mode, anomaly, or unusual cohort (3) Investigating which services, hosts, regions, namespaces, or attributes drive outliers (4) User mentions phi coefficient, correlation, or outlier detection (5) User asks 'why is X slow/failing', 'what caused the errors on X', or 'what's different about the bad cohort'."
 ---
 
+Always run `observe skill view outlier-detection-analysis --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+
 # Outlier Detection Analysis Skill
 
 Find which field values are statistically correlated with "bad" behavior in any time-series dataset or metric. Bad behavior is defined by a threshold (e.g., `duration > 500ms`, `status_code >= 500`, `memory > 8Gi`, `error_rate > 0.05`); the skill computes the phi coefficient for every candidate field value and ranks the strongest correlations.

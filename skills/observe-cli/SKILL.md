@@ -19,6 +19,8 @@ description: >-
   user asks about them directly.
 ---
 
+Always run `observe skill view observe-cli --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+
 # Observe CLI
 
 The Observe CLI (`observe`) is a typed, scriptable interface to the Observe
@@ -28,6 +30,7 @@ platform. Reach for it whenever the user wants to:
 - Inspect schemas and metadata for a specific resource
 - Run an **OPAL** query and pull rows back into the terminal
 - Search the **knowledge graph** for tag keys / tag values
+- Search Observe's **documentation** (e.g. OPAL verb syntax and usage)
 - View AI agent **skills** stored in Observe
 
 ## Always invoke commands with `--json`
@@ -66,12 +69,9 @@ have no structured output, so they don't take `--json`.
 ```bash
 observe auth login                       # browser-based, account discovery
 observe auth login --url 123456.observeinc.com
-observe auth login --useDeviceCode --url 123456.observeinc.com   # headless
+observe auth login --use-device-code --url 123456.observeinc.com   # headless
 observe auth status                      # show current customer/domain
 observe auth logout                      # clear stored credentials
-
-# Manual / scripted setup
-observe configure --domain observeinc --customerId 123456 --token YOUR_API_KEY
 ```
 
 If a command fails with an auth error, check `observe auth status` first.
@@ -307,13 +307,55 @@ observe skill view <skill-id> --content                      # raw markdown body
 `--json`. Use it when you want to load a stored skill into the agent loop
 verbatim; otherwise prefer `--json`.
 
+### Documentation search — `observe docs search`
+
+Search Observe's built-in documentation with a natural-language query.
+This is a fast way to confirm **OPAL verb syntax and usage** (arguments,
+options, examples) when the `generate-opal` skill doesn't cover a
+specific verb, or to look up any platform concept or feature.
+
+**Search one concept or verb per query.** Each search should target a
+single verb, function, or idea — don't bundle multiple into one query
+(e.g. avoid `"make_col and timechart"`). When you need to cover more
+than one, run `docs search` repeatedly, once per concept, and combine
+the results yourself.
+
+```bash
+observe docs search "filter verb" --json
+observe docs search "timechart" --json
+# Need two verbs? Run one focused search per verb:
+observe docs search "make_col" --json
+observe docs search "make_resource" --json
+observe docs search "regex extract fields from logs" --limit 10 --json
+observe docs search "align and aggregate metrics" --minScore 0.5 --json
+```
+
+Notes:
+
+- Takes a single positional natural-language `query` string.
+- **One concept/verb at a time.** Keep each query focused on a single
+  verb or idea; issue repeated `docs search` calls when you need to
+  cover more than one.
+- `--limit` (alias `-l`) defaults to `5`, range `1–50`.
+- `--minScore` (0–1) drops results below a cosine-similarity threshold —
+  raise it to keep only the most relevant hits.
+- Each JSON result has `title`, `url`, and `text` (the doc snippet). Use
+  `url` to point the user at the full page, and `text` to read the
+  relevant syntax/example directly in the agent loop.
+- `generate-opal` remains the authoritative OPAL reference; reach for
+  `docs search` to fill gaps, confirm exact verb options, or answer
+  "how do I …" questions about the platform.
+
 ### OPAL Queries — `observe query`
 
 > **Before writing any OPAL pipeline, read the `generate-opal` skill**
 > (`skills/generate-opal/SKILL.md`) and its reference documents. That
 > skill is the authoritative source for OPAL syntax covering logs,
 > metrics, spans, aggregations, joins, duration calculations, regex, and
-> resource datasets. Always consult it first — do not rely on memory.
+> resource datasets. Always consult it first — do not rely on memory. If
+> you still need to confirm a specific verb's syntax or options, use
+> `observe docs search "<verb> syntax" --json` (see "Documentation
+> search" above).
 
 Execute an OPAL pipeline against one or more dataset inputs. Always pass
 `--json` so the rows come back as a parseable array.
@@ -491,6 +533,15 @@ Then alerts and queries:
 - "Investigate alert <id>" → `observe alert view <id> --json`
 - "Run this OPAL query and give me the rows" →
   `observe query -i <id> -p "<pipeline>" --json`
+
+Look up docs / OPAL syntax when you're unsure:
+
+- "What's the syntax for the `filter` verb?" →
+  `observe docs search "filter verb syntax" --json`
+- "How do I use `timechart` / `make_col` / `<verb>`?" →
+  `observe docs search "<verb>" --json`
+- "Where are the docs for X?" →
+  `observe docs search "X" --json` (use each result's `url`)
 
 Service performance & dependencies:
 

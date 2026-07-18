@@ -9,6 +9,8 @@ description: >
 user-invocable: false
 ---
 
+Always run `observe skill view query-card-visualization --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+
 # OPAL visualization templates
 
 Use this skill to construct the `visualizationTemplate` field of a query card.
