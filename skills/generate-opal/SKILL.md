@@ -7,7 +7,7 @@ description: >
 user-invocable: false
 ---
 
-Always run `observe skill view generate-opal --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view generate-opal --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Core OPAL: pipeline generation, dataset kinds, column selection, routing
 

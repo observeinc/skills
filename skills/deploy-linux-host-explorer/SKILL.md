@@ -11,9 +11,11 @@ description: >-
   setup-linux-host-collection.
 ---
 
-Always run `observe skill view deploy-linux-host-explorer --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view deploy-linux-host-explorer --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Deploy Host Explorer
+
+> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow that replicates the Observe UI's Host Explorer setup flow entirely from the terminal. Orchestrates sub-skills to create all backend resources via the Observe CLI and install the Observe Agent on a Linux host.
 
