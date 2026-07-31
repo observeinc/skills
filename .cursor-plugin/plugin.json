@@ -1,7 +1,7 @@
 {
   "name": "observe",
   "displayName": "Observe by Snowflake",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
   "author": {
     "name": "Observe by Snowflake"
@@ -26,7 +26,9 @@
         "description": "Your Observe base URL (e.g. 101.observeinc.com)"
       }
     },
-    "required": ["OBSERVE_BASE_URL"]
+    "required": [
+      "OBSERVE_BASE_URL"
+    ]
   },
   "mcpServers": {
     "observe": {

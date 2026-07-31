@@ -3,9 +3,11 @@ name: opentelemetry-validation
 description: Canned queries for various APM features in Observe. Use to validate auto-instrumentation, or when validating or troubleshooting OpenTelemetry instrumentation for a service sending telemetry to Observe.
 ---
 
-Always run `observe skill view opentelemetry-validation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view opentelemetry-validation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # OpenTelemetry Validation and Troubleshooting
+
+> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 This skill validates that an instrumented service is emitting correct telemetry to Observe, and provides troubleshooting assistance.
 

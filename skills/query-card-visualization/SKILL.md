@@ -9,7 +9,7 @@ description: >
 user-invocable: false
 ---
 
-Always run `observe skill view query-card-visualization --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view query-card-visualization --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # OPAL visualization templates
 

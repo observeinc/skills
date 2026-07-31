@@ -620,11 +620,13 @@ JSON schema for the `barChart` visualizationTemplate object. The `visualizationT
           }
         },
         "legend": {
-          "description": "Configuration for the chart legend. Controls the appearance and behavior of the legend.",
+          "description": "Configuration for the chart legend. Controls the appearance and behavior of the legend. Legends are ON BY DEFAULT: if omitted, the legend is shown (visible: true, placement: 'bottom'). Only set visible: false to hide it.",
+          "default": {},
           "type": "object",
           "properties": {
             "visible": {
-              "description": "Whether to show the legend at all. Set to false to hide the legend completely.Time series charts with more than 1 series should have this true. If X or Y fields are the same as the group key, then this should be false.",
+              "description": "Whether to show the legend at all. Legends are ON BY DEFAULT: if you omit this field (or the entire legend object), the legend will be shown (visible: true). Only set this to false to explicitly hide the legend completely. Time series charts with more than 1 series should have this true. If X or Y fields are the same as the group key, then this should be false.",
+              "default": true,
               "anyOf": [
                 {
                   "type": "boolean"
@@ -635,29 +637,26 @@ JSON schema for the `barChart` visualizationTemplate object. The `visualizationT
               ]
             },
             "placement": {
-              "description": "The position of the legend relative to the visualization. Controls where the legend appears.",
+              "description": "The position of the legend relative to the visualization. Controls where the legend appears. Defaults to 'bottom' when omitted.",
+              "default": "bottom",
               "anyOf": [
                 {
                   "anyOf": [
                     {
                       "type": "string",
-                      "const": "top",
-                      "description": "Places the legend at the top of the visualization. Good for horizontal legends with many items."
+                      "const": "top"
                     },
                     {
                       "type": "string",
-                      "const": "right",
-                      "description": "Places the legend at the right of the visualization. The default and most common position."
+                      "const": "right"
                     },
                     {
                       "type": "string",
-                      "const": "bottom",
-                      "description": "Places the legend at the bottom of the visualization. Good for horizontal legends with many items."
+                      "const": "bottom"
                     },
                     {
                       "type": "string",
-                      "const": "left",
-                      "description": "Places the legend at the left of the visualization. Useful when right side has other elements."
+                      "const": "left"
                     }
                   ]
                 },

@@ -10,9 +10,11 @@ description: >-
   "backend." Also invoked by deploy-k8s-explorer during full setup.
 ---
 
-Always run `observe skill view setup-k8s-backend --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view setup-k8s-backend --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Set Up Kubernetes Explorer Backend
+
+> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Focused workflow for creating the Observe backend resources needed to run Kubernetes Explorer: datastreams, content packages, and an ingest token. This skill does not touch the Kubernetes cluster or the helm chart.
 

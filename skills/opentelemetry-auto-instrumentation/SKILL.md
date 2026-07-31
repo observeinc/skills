@@ -3,9 +3,11 @@ name: opentelemetry-auto-instrumentation
 description: Installs and configures OpenTelemetry auto-instrumentation for applications written in Java, .NET, Node.js, Python, Ruby. Use when instrumenting applications with opentelemetry auto-instrumentation, auditing existing auto-instrumentation implementations,  migrating from vendor locked instrumentations to OpenTelemetry, or checking for latest versions of instrumentation libraries.
 ---
 
-Always run `observe skill view opentelemetry-auto-instrumentation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view opentelemetry-auto-instrumentation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Instrumenting Applications Using OpenTelemetry
+
+> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 ## Principles
 

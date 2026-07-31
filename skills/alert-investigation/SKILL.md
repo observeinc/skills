@@ -3,7 +3,7 @@ name: alert-investigation
 description: "Investigate alerts using systematic SRE methodology to understand issues, assess impact, test hypotheses, and identify root causes with evidence-based analysis. Use when: (1) User asks to investigate or analyze an alert (2) User mentions a specific alert or monitor that is firing (3) Debugging production issues or incidents (4) User asks about alert root cause or impact (5) User wants to understand why something is alerting (6) Performing incident response or triage."
 ---
 
-Always run `observe skill view alert-investigation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view alert-investigation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Alert Investigation Skill
 

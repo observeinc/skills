@@ -11,9 +11,11 @@ description: >-
   or deploy-linux-host-explorer for that.
 ---
 
-Always run `observe skill view setup-linux-host-collection --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+Always always first try to use the skill via `observe skill view setup-linux-host-collection --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
 
 # Set Up Host Data Collection
+
+> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow to guide users through installing and configuring the Observe Agent on a Linux host. This skill handles agent installation only — it does not create Observe backend resources (datastreams, content, or tokens). If those resources do not yet exist, run `setup-linux-host-backend` first, or use `deploy-linux-host-explorer` for the full end-to-end flow.
 
@@ -230,6 +232,19 @@ If the user skipped `service.name` during initial setup (because they didn't yet
    Then `sudo systemctl restart observe-agent`.
 
 The `opentelemetry-auto-instrumentation` skill instructs the user to come back here once they know `service.name`, so this step is handled organically when they go through it.
+
+### Hand off
+
+- **Do not modify the application or its build/deploy pipeline yourself.** If a change is required, hand off to the appropriate skill so the user gets a complete, tested workflow rather than partial advice.
+- Ask the user whether they want to instrument an application now, set it up later, or just confirm what they already have:
+  - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
+  - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
+  - If they're not ready to instrument anything yet — exit; the host-side setup is complete and the OTLP endpoints will be ready whenever they are.
+
+| Skill                                | Description                                                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `opentelemetry-auto-instrumentation` | Add OpenTelemetry to an existing app (auto-instrumentation for Java, Python, Node.js, .NET, Ruby)                         |
+| `opentelemetry-validation`           | Verify instrumentation is wired correctly and the expected spans, RED metrics, and runtime metrics are landing in Observe |
 
 ---
 
