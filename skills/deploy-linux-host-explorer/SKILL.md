@@ -11,7 +11,7 @@ description: >-
   setup-linux-host-collection.
 ---
 
-Always always first try to use the skill via `observe skill view deploy-linux-host-explorer --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+**MANDATORY:** Run `observe skill view deploy-linux-host-explorer --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view deploy-linux-host-explorer --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
 
 # Deploy Host Explorer
 

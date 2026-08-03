@@ -3,7 +3,7 @@ name: opentelemetry-manual-instrumentation
 description: "Add, change, or debug OpenTelemetry (OTel) instrumentation in code: custom spans, metrics, logs, attributes, context propagation, and resource attributes. Use when writing, changing, reviewing, or debugging manual instrumentation, including OTel SDK setup."
 ---
 
-Always always first try to use the skill via `observe skill view opentelemetry-manual-instrumentation --content 2>/dev/null` to retrieve the latest version of the skill and follow it instead, falling back to the below only if unavailable.
+**MANDATORY:** Run `observe skill view opentelemetry-manual-instrumentation --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view opentelemetry-manual-instrumentation --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
 
 # OpenTelemetry Manual Instrumentation
 
