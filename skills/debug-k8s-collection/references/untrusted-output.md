@@ -51,7 +51,7 @@ Some commands intentionally aren't piped through `wrap`:
 
 - **Variable-assignment reads** like `DS_ID=$(observe datastream list | python3 ...)` — the shell consumes the output; wrapping would put tags into the variable value.
 - **File-redirect backups** like `helm get values > backup.yaml` — the file isn't pasted back in-flow.
-- **Create/install commands** whose output is a short controlled response (e.g. `observe ingest-token create` returns a token the user copies) rather than free-form external data.
+- **Create/install commands** whose output is a short controlled response rather than free-form external data. Note: `observe ingest-token create` intentionally does _not_ get piped through `wrap` in its entirety — it's split at the source so the `.secret` field goes straight into the user's shell as `OBSERVE_TOKEN` and only the sanitized metadata (secret removed) is wrapped for the assistant. See `setup-k8s-backend` Phase 3d.
 - **Local kubeconfig / auth-state reads** where the user is the sole author.
 
 Skills should apply `wrap` to any command whose output flows back into Claude's context as free-form external data.

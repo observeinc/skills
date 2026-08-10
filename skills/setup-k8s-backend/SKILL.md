@@ -14,7 +14,7 @@ description: >-
 
 # Set Up Kubernetes Explorer Backend
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Focused workflow for creating the Observe backend resources needed to run Kubernetes Explorer: datastreams, content packages, and an ingest token. This skill does not touch the Kubernetes cluster or the helm chart.
 
@@ -209,30 +209,46 @@ observe content tracing install \
 
 Create an ingest token with no datastream associations. Routing to the correct datastreams happens automatically at ingest time via target-package prefix matching (datastream names like `Kubernetes Explorer/...`, `Observe Agent/...`, `Tracing/...` are matched by prefix). Do **not** pass `--datastream-ids`.
 
+> **⚠ Do not ask the user to paste the token value into the chat, and do not
+> include the value in any command, summary, or block you generate.** The
+> flow below is designed so the secret lives only in the user's shell (as
+> `OBSERVE_TOKEN`) and is referenced downstream as `"$OBSERVE_TOKEN"`. If you
+> ever find yourself about to emit the raw secret, stop — that is the
+> W007-class failure this step exists to avoid.
+
+Ask the user to run the following in the same shell they'll use for Phase 4. It creates the token, exports the secret into `OBSERVE_TOKEN` in that shell, and pipes only the non-secret metadata (id, name, description, timestamps) back through `wrap` so you can record the token's id. `jq` is required.
+
 ```bash
-observe ingest-token create \
+TOKEN_JSON=$(observe ingest-token create \
   --name "K8s Explorer - <CLUSTER_NAME>" \
-  --description "Ingest token for Kubernetes Explorer agent on <CLUSTER_NAME>"
+  --description "Ingest token for Kubernetes Explorer agent on <CLUSTER_NAME>")
+export OBSERVE_TOKEN=$(printf '%s' "$TOKEN_JSON" | jq -r '.secret')
+printf '%s' "$TOKEN_JSON" | jq 'del(.secret)' | wrap "observe-ingest-token-create"
+[ -n "$OBSERVE_TOKEN" ] && echo "OBSERVE_TOKEN env var set (value hidden from assistant)." \
+                        || echo "ERROR: OBSERVE_TOKEN not set — inspect the JSON above."
 ```
 
-**IMPORTANT — display the token to the user immediately, in the same shape the Observe UI uses when minting a token:** a monospaced block they can copy from, paired with a clear "save this now" warning. Wait for the user to confirm they have copied it before continuing to Phase 4.
+Read the wrapped block to confirm the token was created and to capture its `id` and `name`. Do not attempt to read, print, or infer `$OBSERVE_TOKEN` itself — the value has been intentionally stripped from what you see.
 
-Use roughly this format:
+Then tell the user, roughly:
 
 ```
-Your ingest token (copy now — Observe will not show it to you again):
+Your ingest token has been minted. It's available in the current shell as
+$OBSERVE_TOKEN — the assistant does not see the value.
 
-    <SECRET_VALUE>
+⚠ Save it somewhere safe now (password manager, secrets vault, trusted note).
+If you close this shell, $OBSERVE_TOKEN is gone, and Observe has no way to
+retrieve the value later — you'd have to mint a new token and rotate the
+Kubernetes secret. To view it yourself for saving (in your terminal only,
+not in the chat):
 
-Save this somewhere safe (a password manager, a secrets vault, a trusted
-note). The next phase uses it to create a Kubernetes secret for the helm
-chart. There is no way to retrieve this token later via the CLI or the UI;
-if you lose it, you'll need to mint a new one and update the secret.
+    printf '%s\n' "$OBSERVE_TOKEN"
 
-Have you copied it? (yes/no)
+Have you saved it, and is $OBSERVE_TOKEN still set in the shell you'll use
+for Phase 4? (yes/no)
 ```
 
-Do not proceed until the user confirms. If they say no, repeat the token. If they explicitly skip the confirmation ("just go ahead"), proceed but flag that they're on their own to retrieve it before the helm install needs it.
+Do not proceed until the user confirms. If they need to switch to a different shell before Phase 4, tell them to re-export `OBSERVE_TOKEN` in the new shell (from their password manager) before running the Phase 4 commands.
 
 ---
 
@@ -264,7 +280,10 @@ Resources Created:
 
   Ingest Token:
     - Name: "K8s Explorer - <CLUSTER_NAME>"
-    - Secret: <TOKEN_SECRET>  ← save this; it cannot be retrieved again
+    - Secret: set in the user's shell as $OBSERVE_TOKEN (hidden from the
+              assistant). User was reminded in Phase 3d to save the value
+              externally; if the shell is closed before Phase 4 the value
+              must be re-exported from their password manager.
 ```
 
 ---

@@ -16,7 +16,7 @@ description: >-
 
 # Debug Host Data Collection
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive troubleshooting workflow for diagnosing Observe Agent collection problems on Linux hosts. Work through the steps below in order, stopping when the root cause is found.
 
@@ -121,13 +121,23 @@ observe-agent status | wrap "observe-agent-status"
 
 ## Step 4: Inspect the Configuration File
 
+The config file contains the ingest token as a plaintext `token:` field. **Do not pipe the raw yaml through `wrap`** — that would put the secret into the assistant's context. Instead, redact the token line before wrapping, and read a masked fingerprint of the token separately so its presence and rough shape can be verified without leaking the value.
+
 ```bash
-cat /etc/observe-agent/observe-agent.yaml | wrap "observe-agent-yaml"
+# Config with token line redacted:
+sudo sed -E 's|^([[:space:]]*token:[[:space:]]*).*$|\1<REDACTED — see fingerprint below>|' \
+  /etc/observe-agent/observe-agent.yaml | wrap "observe-agent-yaml-redacted"
+
+# Masked token fingerprint (first 8 chars, last 4 chars, total length — enough to
+# spot truncation, corruption, or a stale token, but not enough to reconstruct it):
+sudo grep -E '^[[:space:]]*token:' /etc/observe-agent/observe-agent.yaml \
+  | python3 -c "import sys,re; line=sys.stdin.read().strip(); m=re.match(r'\s*token:\s*[\"\']?([^\"\'\s]+)', line); t=(m.group(1) if m else ''); print(f'token = {t[:8]}...{t[-4:]} (length={len(t)})' if t else 'no token line found')" \
+  | wrap "observe-agent-token-fingerprint"
 ```
 
 Verify that these fields are set to the expected values:
 
-- `token` — must match the ingest token created during backend setup
+- `token` — the fingerprint's length and last-4 should match what `setup-linux-host-backend` Phase 3d minted (the user can compare against their password-manager copy). An 8-char prefix match alone isn't sufficient — Observe tokens share the `ds...`-style prefix.
 - `observe_url` — must be the collection endpoint (e.g., `https://<CUSTOMER_ID>.collect.<DOMAIN>/`)
 - `host_monitoring.logs.enabled` — `true` if logs were selected
 - `host_monitoring.metrics.host.enabled` — `true` if host metrics were selected
@@ -135,10 +145,10 @@ Verify that these fields are set to the expected values:
 
 When the user reports "data isn't flowing", "data is missing", or "some signal isn't showing up", treat any `enabled: false` on a default-on collector (`host_monitoring.logs`, `host_monitoring.metrics.host`, `self_monitoring.fleet`) as a likely **defect to flip**, not as user intent. Realistic operator scenarios for that complaint are "I thought X was on and something flipped it off" or "I copy-pasted a config without noticing X was off" — almost never "I intentionally disabled X and want you to leave it." Don't reason past a `false` by assuming the user wanted that collector off; flip it to `true`, restart the service, and verify the corresponding datastream catches up.
 
-If any values are wrong, re-run `init-config` (single line, `::` separators, explicit fleet flag — same caveats as `setup-linux-host-collection`):
+If any values are wrong, re-run `init-config`. The command references `"$OBSERVE_TOKEN"` — the user's shell expands it, the assistant never sees the value. Do **not** substitute the literal token. If the shell doesn't have it set, the user re-exports from their password manager first (see `setup-linux-host-backend` Phase 3d); verify with `[ -n "$OBSERVE_TOKEN" ] && echo "ok" || echo "MISSING"`. If `sudo` scrubs the env, use `sudo -E …` (single line, `::` separators, explicit fleet flag — same caveats as `setup-linux-host-collection`):
 
 ```bash
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
 sudo systemctl restart observe-agent
 ```
 
@@ -275,16 +285,31 @@ Empty `[]` for a flag that should be `true` means that collector isn't actually 
 
 ## Reinstall / Reconfigure
 
-If all diagnostic steps fail and the agent remains broken, reinstall:
+If all diagnostic steps fail and the agent remains broken, reinstall.
+
+> **⚠ Destructive step — get explicit confirmation before proceeding.** The
+> reinstall clears `/etc/observe-agent/` so a fresh `init-config` can write a
+> clean state. To make this reversible if something goes wrong (e.g. the new
+> `init-config` fails and the user needs to compare against the previous
+> config), **rename the directory to a timestamped backup instead of deleting
+> it.** After a successful `observe-agent status`, the backup can be removed
+> manually. Ask the user before running:
+>
+> > "Reinstalling clears `/etc/observe-agent/` (via rename to a timestamped
+> > backup, kept around for rollback). You should have the ingest token
+> > available as `$OBSERVE_TOKEN` in this shell before we start. Proceed?
+> > (yes/no)"
+
+Do not proceed until the user says yes. If they say no, stop and re-triage.
 
 **Ubuntu / Debian:**
 
 ```bash
 sudo systemctl stop observe-agent
 sudo apt remove observe-agent
-sudo rm -rf /etc/observe-agent/
+sudo mv /etc/observe-agent "/etc/observe-agent.$(date -u +%Y%m%dT%H%M%SZ).bak"
 sudo apt install -y observe-agent
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
 sudo systemctl restart observe-agent
 observe-agent status | wrap "observe-agent-status"
 ```
@@ -294,11 +319,17 @@ observe-agent status | wrap "observe-agent-status"
 ```bash
 sudo systemctl stop observe-agent
 sudo yum remove observe-agent
-sudo rm -rf /etc/observe-agent/
+sudo mv /etc/observe-agent "/etc/observe-agent.$(date -u +%Y%m%dT%H%M%SZ).bak"
 sudo yum install -y observe-agent
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::fleet::enabled=true
 sudo systemctl restart observe-agent
 observe-agent status | wrap "observe-agent-status"
+```
+
+Once the new install reports healthy in `observe-agent status`, the user can remove the backup at their leisure:
+
+```bash
+sudo rm -rf /etc/observe-agent.*.bak
 ```
 
 If the ingest token is no longer available, create a new one via the CLI:

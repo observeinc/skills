@@ -16,7 +16,7 @@ description: >-
 
 # Deploy Kubernetes Explorer
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow that replicates the Observe UI's Kubernetes Explorer setup flow entirely from the terminal. Orchestrates sub-skills to create all backend resources via the Observe CLI and deploy the Observe Agent helm chart.
 
@@ -222,7 +222,7 @@ Auth (Phase 2) is already complete — skip the auth steps in setup-k8s-backend 
 After setup-k8s-backend completes, you will have:
 
 - All datastream IDs
-- Ingest token secret (the `secret` field from the token creation response)
+- The ingest token minted in the user's shell as `OBSERVE_TOKEN`. Only the token's id and name enter the assistant's context (via the wrapped, `.secret`-stripped metadata block in setup-k8s-backend Phase 3d); the raw secret value does not. Downstream commands in Phase 4 reference the value as `"$OBSERVE_TOKEN"` so the user's shell interpolates it without the assistant ever seeing it.
 
 ---
 
@@ -232,16 +232,16 @@ Read the `setup-k8s-collection` skill and execute it. Do NOT re-ask for informat
 
 Pass the following context:
 
-| Context                          | Source                                                                                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Collection endpoint              | Derived from Phase 1b: `https://<CUSTOMER_ID>.collect.<DOMAIN>/`                                                                                 |
-| Ingest token                     | `secret` value from Phase 3 (setup-k8s-backend)                                                                                                  |
-| Cluster name                     | Phase 1b                                                                                                                                         |
-| Infrastructure type              | Phase 1a (maps to: Standard, Fargate, GKE Autopilot, or EKS Auto Mode)                                                                           |
-| Data type selections             | Phase 1c                                                                                                                                         |
-| Attribution tags                 | Phase 1d (`deployment.environment.name` — whichever the user provided; `team.name` handling is per-workload via Phase 1f's `annotations` add-on) |
-| Fargate service account mappings | Phase 1e (if Fargate)                                                                                                                            |
-| Optional add-on selections       | Phase 1f (manifest ids + captured follow-ups; empty if none)                                                                                     |
+| Context                          | Source                                                                                                                                                                                    |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Collection endpoint              | Derived from Phase 1b: `https://<CUSTOMER_ID>.collect.<DOMAIN>/`                                                                                                                          |
+| Ingest token                     | `OBSERVE_TOKEN` env var set in the user's shell during Phase 3 (setup-k8s-backend Phase 3d). Referenced downstream as `"$OBSERVE_TOKEN"`; the value never enters the assistant's context. |
+| Cluster name                     | Phase 1b                                                                                                                                                                                  |
+| Infrastructure type              | Phase 1a (maps to: Standard, Fargate, GKE Autopilot, or EKS Auto Mode)                                                                                                                    |
+| Data type selections             | Phase 1c                                                                                                                                                                                  |
+| Attribution tags                 | Phase 1d (`deployment.environment.name` — whichever the user provided; `team.name` handling is per-workload via Phase 1f's `annotations` add-on)                                          |
+| Fargate service account mappings | Phase 1e (if Fargate)                                                                                                                                                                     |
+| Optional add-on selections       | Phase 1f (manifest ids + captured follow-ups; empty if none)                                                                                                                              |
 
 Skip the "Prerequisites to Gather" section of setup-k8s-collection and go directly to the matching platform flow, starting from "Step 1: Generate values file."
 

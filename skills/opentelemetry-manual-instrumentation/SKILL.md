@@ -7,6 +7,8 @@ description: "Add, change, or debug OpenTelemetry (OTel) instrumentation in code
 
 # OpenTelemetry Manual Instrumentation
 
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+
 Instrument to serve the user's intent, not just to emit telemetry. Decide what the change
 is for before you pick a signal. Confirm the use case with the user when they haven't stated
 it; don't infer intent from the code.

@@ -15,7 +15,7 @@ description: >-
 
 # Set Up Host Data Collection
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow to guide users through installing and configuring the Observe Agent on a Linux host. This skill handles agent installation only — it does not create Observe backend resources (datastreams, content, or tokens). If those resources do not yet exist, run `setup-linux-host-backend` first, or use `deploy-linux-host-explorer` for the full end-to-end flow.
 
@@ -28,14 +28,14 @@ Interactive workflow to guide users through installing and configuring the Obser
 
 This skill expects the following inputs to be in hand before it runs. The orchestrator (`deploy-linux-host-explorer`) collects them across Phases 1 and 4 and passes them through; if you arrived here directly without them, stop and route the user there for the consolidated config-confirmation flow.
 
-| Input                                                                           | Source / how to obtain                                                                                                                                              |
-| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux distribution (`ubuntu-debian` or `rhel-centos`)                           | Ask the user; only used to pick the install flow below.                                                                                                             |
-| Observe collection endpoint (`https://<CUSTOMER_ID>.collect.<DOMAIN>/`)         | Derived from the customer URL.                                                                                                                                      |
-| Observe ingest token (`secret`)                                                 | Created by `setup-linux-host-backend` (token name: "Host Explorer").                                                                                                |
-| Host data selections (`logs`, `metrics`, both, or neither)                      | Confirmed in `deploy-linux-host-explorer` Step 4b. Defaults to both on.                                                                                             |
-| `deployment.environment.name`                                                   | Ask the user (e.g. `production`, `staging`, `development`). Required — without it, APM R.E.D metrics and the validation skill cannot scope queries to this service. |
-| Usage attribution tags (`service.name`, `team.name` — any subset, all optional) | Confirmed in `deploy-linux-host-explorer` Step 4c.                                                                                                                  |
+| Input                                                                           | Source / how to obtain                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Linux distribution (`ubuntu-debian` or `rhel-centos`)                           | Ask the user; only used to pick the install flow below.                                                                                                                                                                                                                                                                                                                                                         |
+| Observe collection endpoint (`https://<CUSTOMER_ID>.collect.<DOMAIN>/`)         | Derived from the customer URL.                                                                                                                                                                                                                                                                                                                                                                                  |
+| Observe ingest token                                                            | Expected in the user's shell as the `OBSERVE_TOKEN` env var (minted by `setup-linux-host-backend` Phase 3d). The value must never enter the conversation — downstream `observe-agent init-config` commands reference it as `"$OBSERVE_TOKEN"` and rely on the user's shell to interpolate it. If the shell was closed between skills, the user re-exports it from their password manager before running Step 4. |
+| Host data selections (`logs`, `metrics`, both, or neither)                      | Confirmed in `deploy-linux-host-explorer` Step 4b. Defaults to both on.                                                                                                                                                                                                                                                                                                                                         |
+| `deployment.environment.name`                                                   | Ask the user (e.g. `production`, `staging`, `development`). Required — without it, APM R.E.D metrics and the validation skill cannot scope queries to this service.                                                                                                                                                                                                                                             |
+| Usage attribution tags (`service.name`, `team.name` — any subset, all optional) | Confirmed in `deploy-linux-host-explorer` Step 4c.                                                                                                                                                                                                                                                                                                                                                              |
 
 If any of host data selections, attribution tags, or token are missing, run `deploy-linux-host-explorer` first instead of asking inline. That skill owns the recommended-config presentation and consequence framing; duplicating those questions here would diverge over time.
 
@@ -91,13 +91,17 @@ Run `observe-agent init-config` with the values collected in Prerequisites. Pass
 
 `deployment.environment.name` is always required — include it in `--resource_attributes`. If the user also provided `service.name` or `team.name`, add those to the same comma-separated list; omit the ones they skipped.
 
+> **Token handling.** The commands below reference `"$OBSERVE_TOKEN"` — the user's shell expands it, the assistant never sees the value. Do **not** substitute the literal token here. Ask the user to verify their shell has `OBSERVE_TOKEN` set before running: `[ -n "$OBSERVE_TOKEN" ] && echo "ok" || echo "MISSING"` — if missing they re-export from their password manager (see `setup-linux-host-backend` Phase 3d). Note that on a shared host, the token still lives in `/proc/<pid>/cmdline` for the duration of the `init-config` process and may appear in shell history depending on the user's shell config — this is a residual /proc-cmdline exposure that is separate from the LLM-side W007 concern.
+
 ```bash
 # deployment.environment.name only (no other attribution tags):
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>
 
 # With additional attribution tags:
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
 ```
+
+Note on `sudo`: by default `sudo` scrubs environment variables. If `OBSERVE_TOKEN` isn't reaching the child, use `sudo -E ...` (preserves env) or `sudo OBSERVE_TOKEN="$OBSERVE_TOKEN" observe-agent init-config --token "$OBSERVE_TOKEN" ...` — the outer shell still handles interpolation, the assistant still doesn't see the value.
 
 This writes the config to `/etc/observe-agent/observe-agent.yaml`.
 
@@ -177,7 +181,7 @@ observe-agent version | wrap "observe-agent-version"
 Same as Ubuntu — single-line, `::` separators, explicit `host_monitoring`, `fleet`, and `RED_metrics` flags, and `deployment.environment.name` always included in `--resource_attributes`:
 
 ```bash
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
 ```
 
 (Include only the attribution tags the user provided alongside the required `deployment.environment.name`. If `addons.multiline = "auto"` was selected in Phase 4d, also add `--host_monitoring::logs::auto_multiline_detection=true` to the same command.)
@@ -268,7 +272,7 @@ sudo yum update observe-agent
 After upgrading, re-run `init-config` if the configuration needs to change (single line, `::` separators, explicit baseline flags, attribution tags via `--resource_attributes` — same caveats as the install flow):
 
 ```bash
-sudo observe-agent init-config --token <INGEST_TOKEN> --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
+sudo observe-agent init-config --token "$OBSERVE_TOKEN" --observe_url <COLLECTION_ENDPOINT> --host_monitoring::enabled=true --host_monitoring::logs::enabled=<true|false> --host_monitoring::metrics::host::enabled=<true|false> --self_monitoring::enabled=true --self_monitoring::fleet::enabled=true --application::RED_metrics::enabled=true --resource_attributes deployment.environment.name=<ENV>,service.name=<SERVICE>,team.name=<TEAM>
 ```
 
 Then restart the service to pick up the new config:

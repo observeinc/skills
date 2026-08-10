@@ -15,7 +15,7 @@ description: >-
 
 # Debug Kubernetes Collection
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive troubleshooting workflow for diagnosing Observe Agent collection problems on Kubernetes. Work through the steps below in order, stopping when the root cause is found.
 
@@ -165,11 +165,14 @@ OBSERVE_TOKEN = ds1Wbnfm...JC5Q (length=53)
 
 If the length or last 4 chars don't match what was issued by `observe ingest-token create`, the secret is wrong even if the prefix looks familiar.
 
-If the secret is missing or wrong, re-apply it idempotently (works whether or not it already exists):
+If the secret is missing or wrong, re-apply it idempotently. The block below expects `OBSERVE_TOKEN` to be set in the user's shell (as `setup-k8s-backend` Phase 3d mints it); `$OBSERVE_TOKEN` is expanded by that shell so the assistant never sees the raw value. If it's not set, the user should re-export it first — from wherever they saved it (see setup-k8s-backend Phase 3d); do not substitute the literal token value here.
 
 ```bash
+# Pre-flight (run in your terminal, not through the assistant):
+#     [ -n "$OBSERVE_TOKEN" ] && echo "ok" || echo "MISSING — re-export before running below"
+
 kubectl -n observe create secret generic agent-credentials \
-  --from-literal=OBSERVE_TOKEN=<INGEST_TOKEN> \
+  --from-literal=OBSERVE_TOKEN="$OBSERVE_TOKEN" \
   --dry-run=client -o yaml | kubectl apply -f -
 kubectl annotate secret agent-credentials -n observe \
   meta.helm.sh/release-name=observe-agent \
