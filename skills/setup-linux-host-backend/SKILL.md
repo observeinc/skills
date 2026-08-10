@@ -14,7 +14,7 @@ description: >-
 
 # Set Up Host Explorer Backend
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Focused workflow for creating the Observe backend resources needed to run Host Explorer: datastreams, content packages, and an ingest token. This skill does not install or configure the Observe Agent on any host.
 
@@ -196,15 +196,47 @@ observe content host install \
 
 Create an ingest token with no datastream associations. Routing to the correct datastreams happens automatically at ingest time via target-package prefix matching (datastream names like `Host Explorer/...` are matched by prefix). Do **not** pass `--datastream-ids`.
 
+> **⚠ Do not ask the user to paste the token value into the chat, and do not
+> include the value in any command, summary, or block you generate.** The
+> flow below is designed so the secret lives only in the user's shell (as
+> `OBSERVE_TOKEN`) and is referenced downstream as `"$OBSERVE_TOKEN"`. If you
+> ever find yourself about to emit the raw secret, stop — that is the
+> W007-class failure this step exists to avoid.
+
+Ask the user to run the following in the same shell they'll use for the collection setup. It creates the token, exports the secret into `OBSERVE_TOKEN` in that shell, and pipes only the non-secret metadata (id, name, description, timestamps) back through `wrap` so you can record the token's id. `jq` is required.
+
 ```bash
-observe ingest-token create \
+TOKEN_JSON=$(observe ingest-token create \
   --name "Host Explorer" \
-  --description "Ingest token for Host Explorer agents (tenant-wide, routes by datastream-name prefix)"
+  --description "Ingest token for Host Explorer agents (tenant-wide, routes by datastream-name prefix)")
+export OBSERVE_TOKEN=$(printf '%s' "$TOKEN_JSON" | jq -r '.secret')
+printf '%s' "$TOKEN_JSON" | jq 'del(.secret)' | wrap "observe-ingest-token-create"
+[ -n "$OBSERVE_TOKEN" ] && echo "OBSERVE_TOKEN env var set (value hidden from assistant)." \
+                        || echo "ERROR: OBSERVE_TOKEN not set — inspect the JSON above."
 ```
 
-If a token named `Host Explorer` already exists in the tenant, the create call will fail with a uniqueness error. In that case, list existing tokens (`observe ingest-token list`) and offer the user the option to (a) reuse an existing one if they have its secret, or (b) create a new token with a different name (e.g. `Host Explorer 2`).
+If a token named `Host Explorer` already exists in the tenant, the create call will fail with a uniqueness error and `OBSERVE_TOKEN` will be empty. In that case, list existing tokens (`observe ingest-token list | wrap "observe-ingest-token-list"`) and offer the user the option to (a) reuse an existing one — they must re-export its secret themselves as `export OBSERVE_TOKEN=<value>` in their shell without sharing it in chat, or (b) create a new token with a different name (e.g. `Host Explorer 2`).
 
-**IMPORTANT:** The JSON response includes a `secret` field. **Show the `secret` value to the user** — this is the token for the agent config. Warn that it cannot be retrieved again.
+Read the wrapped block to confirm the token was created and to capture its `id` and `name`. Do not attempt to read, print, or infer `$OBSERVE_TOKEN` itself — the value has been intentionally stripped from what you see.
+
+Then tell the user, roughly:
+
+```
+Your ingest token has been minted. It's available in the current shell as
+$OBSERVE_TOKEN — the assistant does not see the value.
+
+⚠ Save it somewhere safe now (password manager, secrets vault, trusted note).
+If you close this shell, $OBSERVE_TOKEN is gone, and Observe has no way to
+retrieve the value later — you'd have to mint a new token. To view it
+yourself for saving (in your terminal only, not in the chat):
+
+    printf '%s\n' "$OBSERVE_TOKEN"
+
+Have you saved it, and is $OBSERVE_TOKEN still set in the shell you'll use
+for the agent install? (yes/no)
+```
+
+Do not proceed until the user confirms. If they need to switch to a different shell before the agent install, tell them to re-export `OBSERVE_TOKEN` in the new shell (from their password manager) first.
 
 ---
 
@@ -232,7 +264,10 @@ Resources Created:
 
   Ingest Token:
     - Name: "Host Explorer"
-    - Secret: <TOKEN_SECRET>  <- save this; it cannot be retrieved again
+    - Secret: set in the user's shell as $OBSERVE_TOKEN (hidden from the
+              assistant). User was reminded in Phase 3d to save the value
+              externally; if the shell is closed before the agent install
+              the value must be re-exported from their password manager.
 ```
 
 ---

@@ -15,7 +15,7 @@ description: >-
 
 # Set Up Kubernetes Data Collection
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow to guide users through deploying the Observe Agent on Kubernetes using the `observe/agent` helm chart.
 
@@ -29,7 +29,7 @@ Interactive workflow to guide users through deploying the Observe Agent on Kuber
 Before starting, collect these from the user. If called from `deploy-k8s-explorer`, these will already be known — do not re-ask.
 
 1. **Observe collection endpoint** — format: `https://<CUSTOMER_ID>.collect.<DOMAIN>/`
-2. **Observe ingest token** — or confirm one exists as a K8s secret
+2. **Observe ingest token** — expected to be present in the user's shell as the `OBSERVE_TOKEN` env var (set by `setup-k8s-backend` Phase 3d). The value must never enter the conversation; downstream commands reference it as `"$OBSERVE_TOKEN"` and rely on the user's shell to interpolate it. Alternative: an equivalent K8s secret already exists in the cluster, in which case Step 2 secret-creation can be skipped.
 3. **Cluster name** — a human-readable identifier for this cluster
 4. **Kubernetes environment type** — determines the deployment topology
 
@@ -165,10 +165,19 @@ Produce the commands the user should run. The commands below are idempotent — 
 helm repo add observe https://observeinc.github.io/helm-charts
 helm repo update observe
 
+# Pre-flight: OBSERVE_TOKEN must be set in this shell. Verify with:
+#     [ -n "$OBSERVE_TOKEN" ] && echo "ok" || echo "MISSING — re-export before running below"
+# If missing, re-export it from your password manager (see setup-k8s-backend
+# Phase 3d) before running the block below.
+#
+# Note to the assistant: `$OBSERVE_TOKEN` is expanded by the user's shell; the
+# value is intentionally hidden. Do NOT substitute the literal token value here
+# — emit the commands with `"$OBSERVE_TOKEN"` as shown.
+
 # Create namespace and secret (apply, so re-runs don't fail on already-exists)
 kubectl create namespace observe --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n observe create secret generic agent-credentials \
-  --from-literal=OBSERVE_TOKEN=<INGEST_TOKEN> \
+  --from-literal=OBSERVE_TOKEN="$OBSERVE_TOKEN" \
   --dry-run=client -o yaml | kubectl apply -f -
 kubectl annotate secret agent-credentials -n observe \
   meta.helm.sh/release-name=observe-agent \

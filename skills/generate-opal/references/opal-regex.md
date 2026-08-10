@@ -13,7 +13,22 @@
 
 Non-greedy quantifiers (`*?`, `+?`) are NOT supported.
 
-Regex flags: `(?i)` for case-insensitive, `(?m)` for multiline.
+**NEVER use inline `(?...)` flag groups** — `(?i)`, `(?m)`, etc. are PCRE syntax. Snowflake/OPAL uses POSIX ERE and rejects them with a parse error (`no argument for repetition operator: ?`). Pass flags as a separate argument or as a slash suffix instead:
+
+    filter match_regex(eventName, /getpolicy/i)                              # slash suffix — case-insensitive
+    filter match_regex(log, /^debug/, 'i')                                   # flags argument
+    filter match_regex(string(body), regex("error.*timeout", "i"))           # regex() constructor with flags
+
+Supported flags: `c` (case-sensitive, default), `i` (case-insensitive), `m` (multiline), `s` (dot matches newline). The same optional flags argument applies to `extract_regex`, `get_regex`, and `get_regex_all`.
+
+Note: `(?P<name>)` **named capture groups** are valid OPAL syntax and remain supported — only the `(?i)`/`(?m)` **flag** form is rejected.
+
+WRONG/CORRECT:
+
+    WRONG:   filter match_regex(body, /(?i)order[_-]?id.*/)
+    CORRECT: filter match_regex(body, /order[_-]?id.*/i)
+    CORRECT: filter match_regex(body, /order[_-]?id.*/, 'i')
+    CORRECT: filter match_regex(body, regex("order[_-]?id.*", "i"))
 
 ---
 

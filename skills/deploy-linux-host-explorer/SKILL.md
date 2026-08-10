@@ -15,7 +15,7 @@ description: >-
 
 # Deploy Host Explorer
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 Interactive workflow that replicates the Observe UI's Host Explorer setup flow entirely from the terminal. Orchestrates sub-skills to create all backend resources via the Observe CLI and install the Observe Agent on a Linux host.
 
@@ -102,7 +102,7 @@ After setup-linux-host-backend completes, you will have:
 - `Host Explorer/Prometheus` datastream ID
 - `Observe Agent/Events` datastream ID (used for fleet heartbeats)
 - `Tracing/Span`, `Metrics/OpenTelemetry`, `Logs/OpenTelemetry` datastream IDs (always created — OTLP forwarding is on by default)
-- Ingest token secret (the `secret` field from the token creation response)
+- The ingest token minted in the user's shell as `OBSERVE_TOKEN`. Only the token's id and name enter the assistant's context (via the wrapped, `.secret`-stripped metadata block in setup-linux-host-backend Phase 3d); the raw secret value does not. Downstream commands in Phase 5 reference the value as `"$OBSERVE_TOKEN"` so the user's shell interpolates it without the assistant ever seeing it.
 
 ---
 
@@ -219,7 +219,7 @@ Pass the following context:
 | Context                    | Source                                                                                                                                                                                                                                              |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Collection endpoint        | Derived from Phase 1: `https://<CUSTOMER_ID>.collect.<DOMAIN>/`                                                                                                                                                                                     |
-| Ingest token               | `secret` value from Phase 3 (setup-linux-host-backend)                                                                                                                                                                                              |
+| Ingest token               | `OBSERVE_TOKEN` env var set in the user's shell during Phase 3 (setup-linux-host-backend Phase 3d). Referenced downstream as `"$OBSERVE_TOKEN"`; the value never enters the assistant's context.                                                    |
 | Linux distribution         | Phase 4a (maps to: Ubuntu/Debian or RHEL/CentOS)                                                                                                                                                                                                    |
 | Host data type selections  | Phase 4b (logs and/or metrics — from the confirmed defaults)                                                                                                                                                                                        |
 | Usage attribution tags     | Phase 4c (`deployment.environment.name`, `service.name`, `team.name` — whichever the user provided after the explicit prompts)                                                                                                                      |

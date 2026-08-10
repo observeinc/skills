@@ -1,6 +1,6 @@
 {
   "name": "observe",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
   "skills": "./skills/",
   "interface": {

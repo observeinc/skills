@@ -7,7 +7,7 @@ description: Installs and configures OpenTelemetry auto-instrumentation for appl
 
 # Instrumenting Applications Using OpenTelemetry
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 ## Principles
 

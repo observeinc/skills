@@ -7,7 +7,7 @@ description: Canned queries for various APM features in Observe. Use to validate
 
 # OpenTelemetry Validation and Troubleshooting
 
-> **Private Preview.** This skill is in private preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
+> **Public Preview.** This skill is in Public Preview and may change before general availability. Some steps use experimental Observe CLI subcommands that require `OBSERVE_CLI_EXPERIMENTAL=1` to be set in the shell — the CLI will refuse with `✗ This command is experimental and may change or be removed` otherwise.
 
 This skill validates that an instrumented service is emitting correct telemetry to Observe, and provides troubleshooting assistance.
 
