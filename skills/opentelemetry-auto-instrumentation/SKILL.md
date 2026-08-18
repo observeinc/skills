@@ -76,21 +76,21 @@ Before presenting a plan, run the version resolution commands from the appropria
 Summarize the analysis and present a reviewable plan before making changes. The plan should include:
 
 - A list of libraries along with their versions:
-  - Categorized as follows
-    - Web/HTTP
-    - Web/RPC
-    - ORM
-    - Database Client
-    - Cache Client
-    - Messaging Client
-  - For each library, populate the following columns based on the Observe support matrix:
-    - Trace Explorer
-    - Service Catalog
-    - Service Maps
-    - Service Inspector
-    - R.E.D Metrics
-    - Deployments
-    - Error / Exception Tracking
+    - Categorized as follows
+        - Web/HTTP
+        - Web/RPC
+        - ORM
+        - Database Client
+        - Cache Client
+        - Messaging Client
+    - For each library, populate the following columns based on the Observe support matrix:
+        - Trace Explorer
+        - Service Catalog
+        - Service Maps
+        - Service Inspector
+        - R.E.D Metrics
+        - Deployments
+        - Error / Exception Tracking
 - Exact dependencies to add or update
 - File edits and startup changes
 - Environment variables
@@ -115,8 +115,8 @@ Apply the approved changes using the appropriate language-specific reference:
 
 - Provide operational guidance to configure instrumentation for the target platform using the [configure](./references/auto-instrumentation/configure.md) reference. **Do not make changes to the developer's infrastructure**.Instead, if a change is required, provide them with the command to execute.
 - Ask the user if they have installed the `Observe Agent` for data collection.
-  - If already installed, provide operational guidance and exit.
-  - If not installed, refer to one of the following skills depending on the user's target environment:
+    - If already installed, provide operational guidance and exit.
+    - If not installed, refer to one of the following skills depending on the user's target environment:
 
 | Skill                        | Description                                                   |
 | ---------------------------- | ------------------------------------------------------------- |

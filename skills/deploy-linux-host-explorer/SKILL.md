@@ -1,14 +1,14 @@
 ---
 name: deploy-linux-host-explorer
 description: >-
-  End-to-end Host Explorer deployment for Observe — creates backend resources
-  (datastreams, content, ingest token) via the Observe CLI and installs the
-  observe-agent on a Linux host. Use this skill whenever the user mentions
-  setting up Observe on a Linux machine, onboarding a host (Ubuntu, Debian,
-  RHEL, CentOS) to Observe, deploying host monitoring from the terminal or
-  CI, or replacing the Observe UI's Host setup wizard — even if they don't
-  say "Host Explorer" explicitly. Orchestrates setup-linux-host-backend and
-  setup-linux-host-collection.
+    End-to-end Host Explorer deployment for Observe — creates backend resources
+    (datastreams, content, ingest token) via the Observe CLI and installs the
+    observe-agent on a Linux host. Use this skill whenever the user mentions
+    setting up Observe on a Linux machine, onboarding a host (Ubuntu, Debian,
+    RHEL, CentOS) to Observe, deploying host monitoring from the terminal or
+    CI, or replacing the Observe UI's Host setup wizard — even if they don't
+    say "Host Explorer" explicitly. Orchestrates setup-linux-host-backend and
+    setup-linux-host-collection.
 ---
 
 **MANDATORY:** Run `observe skill view deploy-linux-host-explorer --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view deploy-linux-host-explorer --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -186,19 +186,19 @@ Only proceed with blank if they confirm yes.
 Operate against the option manifest in [`references/options.md`](./references/options.md). The manifest is the source of truth for option ids, labels, prompts, follow-ups, sub-choices, mutual exclusions, and the docs anchor where each option's YAML configuration lives.
 
 1. **Build the multi-select prompt** from the manifest:
-   - Include every option with `tier: primary` as a multi-select choice, using each option's `label`.
-   - Add `Show me other available options` and `None — skip add-ons` as sentinel choices.
-   - Skip any option whose `unsupported_platforms` matches the current target (no Linux platforms appear there today; this is a no-op on host but exists for parity with the K8s manifest).
+    - Include every option with `tier: primary` as a multi-select choice, using each option's `label`.
+    - Add `Show me other available options` and `None — skip add-ons` as sentinel choices.
+    - Skip any option whose `unsupported_platforms` matches the current target (no Linux platforms appear there today; this is a no-op on host but exists for parity with the K8s manifest).
 
-   Ask the user once:
+    Ask the user once:
 
-   > "Any of these optional agent add-ons? Pick whichever apply (or skip):"
+    > "Any of these optional agent add-ons? Pick whichever apply (or skip):"
 
 2. **For each selected primary option**, walk its manifest block:
-   - If the option has a top-level `prompt`, ask it and capture the answer.
-   - If the option has `choices`, present them as a single-select; for the chosen sub-choice, run its `followups` (if any).
-   - If the option has top-level `followups`, run each in order. Mark `optional: true` follow-ups by accepting `none`/`skip` without re-prompting.
-   - Enforce `excludes` symmetrically: if the user picks two options or sub-choices that exclude each other (e.g. `multiline.auto` and `multiline.custom`), surface the conflict and require a resolution before continuing.
+    - If the option has a top-level `prompt`, ask it and capture the answer.
+    - If the option has `choices`, present them as a single-select; for the chosen sub-choice, run its `followups` (if any).
+    - If the option has top-level `followups`, run each in order. Mark `optional: true` follow-ups by accepting `none`/`skip` without re-prompting.
+    - Enforce `excludes` symmetrically: if the user picks two options or sub-choices that exclude each other (e.g. `multiline.auto` and `multiline.custom`), surface the conflict and require a resolution before continuing.
 
 3. **If the user picks "Show me other available options"**, present every manifest entry with `tier: other` as a multi-select (using each option's `label`). For any selected, capture the id; the agent will walk the user through that option's `docs_anchor` at apply time (no scripted follow-ups in the skill).
 
@@ -338,18 +338,18 @@ At any phase, if an operation fails:
 1. Show the full error message
 2. Show what has been created so far
 3. Ask the user how to proceed:
-   ```
-   AskQuestion:
-     id: error-recovery
-     prompt: "An error occurred. How would you like to proceed?"
-     options:
-       - id: retry
-         label: "Retry the failed step"
-       - id: skip
-         label: "Skip this step and continue"
-       - id: abort
-         label: "Stop here (resources created so far are kept)"
-   ```
+    ```
+    AskQuestion:
+      id: error-recovery
+      prompt: "An error occurred. How would you like to proceed?"
+      options:
+        - id: retry
+          label: "Retry the failed step"
+        - id: skip
+          label: "Skip this step and continue"
+        - id: abort
+          label: "Stop here (resources created so far are kept)"
+    ```
 
 For Phase 3 errors: see error handling in `setup-linux-host-backend`.
 For Phase 5 errors: backend resources are already created; the user can re-run setup-linux-host-collection with the token secret already in hand.

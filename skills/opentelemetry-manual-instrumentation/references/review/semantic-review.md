@@ -19,11 +19,11 @@ For each manually emitted telemetry field, ask:
    this attribute, span name, metric, unit, or resource field? If so, use it
    instead of a custom field.
 2. **Correct level.** Is the field placed at the right level?
-   - resource (entity producing telemetry)
-   - span (one operation)
-   - span event (a moment inside an operation)
-   - metric datapoint (a bounded dimension)
-   - log record (a single log line, ideally trace-correlated)
+    - resource (entity producing telemetry)
+    - span (one operation)
+    - span event (a moment inside an operation)
+    - metric datapoint (a bounded dimension)
+    - log record (a single log line, ideally trace-correlated)
 3. **Span name.** Is the span name **stable and low-cardinality** (operation
    class, not instance)?
 4. **Span kind.** Is the span kind correct (`SERVER`/`CLIENT`/`PRODUCER`/

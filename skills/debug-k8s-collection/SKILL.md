@@ -1,14 +1,14 @@
 ---
 name: debug-k8s-collection
 description: >-
-  Troubleshoot and debug Observe Agent data collection on Kubernetes. Use this
-  skill whenever the user reports any K8s-side problem with Observe — pods
-  crashing, stuck Pending, ImagePullBackOff, "no data in Observe", missing
-  datastreams, suspected token/secret issues, endpoint reachability failures,
-  or platform-specific symptoms on Fargate / GKE Autopilot / EKS Auto Mode —
-  even if they don't explicitly say "debug" or "Observe Agent." Covers pod
-  status, secrets, endpoint reachability, debug logging, self-monitoring
-  metrics, and platform-specific failure modes.
+    Troubleshoot and debug Observe Agent data collection on Kubernetes. Use this
+    skill whenever the user reports any K8s-side problem with Observe — pods
+    crashing, stuck Pending, ImagePullBackOff, "no data in Observe", missing
+    datastreams, suspected token/secret issues, endpoint reachability failures,
+    or platform-specific symptoms on Fargate / GKE Autopilot / EKS Auto Mode —
+    even if they don't explicitly say "debug" or "Observe Agent." Covers pod
+    status, secrets, endpoint reachability, debug logging, self-monitoring
+    metrics, and platform-specific failure modes.
 ---
 
 **MANDATORY:** Run `observe skill view debug-k8s-collection --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view debug-k8s-collection --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -358,11 +358,11 @@ To get verbose output from the agent, add debug configuration to the values file
 
 ```yaml
 agent:
-  config:
-    global:
-      debug:
-        enabled: true
-        verbosity: detailed
+    config:
+        global:
+            debug:
+                enabled: true
+                verbosity: detailed
 ```
 
 Apply with:
@@ -446,7 +446,7 @@ Resolution: Apply a PriorityClass before helm install:
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: observe-agent-priority
+    name: observe-agent-priority
 globalDefault: false
 value: 10000
 preemptionPolicy: "PreemptLowerPriority"
@@ -460,7 +460,7 @@ Then add to values:
 
 ```yaml
 node-logs-metrics:
-  priorityClassName: "observe-agent-priority"
+    priorityClassName: "observe-agent-priority"
 ```
 
 Also ensure `node.kubeletstats.useNodeIp: true` is set — Auto Mode uses instance IDs as node names, and without this kubelet stats collection fails silently.

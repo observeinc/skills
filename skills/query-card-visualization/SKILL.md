@@ -1,11 +1,11 @@
 ---
 name: query-card-visualization
 description: >
-  How to fill in a query card's `visualizationTemplate` (the JSON object that
-  renders a chart). Load this whenever the user asks for a chart, graph,
-  plot, trend, "show me over time", ranking, single number/KPI, scatter,
-  waterfall, or map. Acts as the directory for the per-chart JSON schemas in
-  its references.
+    How to fill in a query card's `visualizationTemplate` (the JSON object that
+    renders a chart). Load this whenever the user asks for a chart, graph,
+    plot, trend, "show me over time", ranking, single number/KPI, scatter,
+    waterfall, or map. Acts as the directory for the per-chart JSON schemas in
+    its references.
 user-invocable: false
 ---
 

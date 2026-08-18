@@ -1,15 +1,15 @@
 ---
 name: debug-linux-host-collection
 description: >-
-  Troubleshoot and debug Observe Agent data collection on Linux hosts. Use
-  this skill whenever the user reports any host-side problem with Observe —
-  the agent failing to start, `observe-agent status` reporting errors,
-  `init-config` failing with unknown flags, "no data in Observe" from a
-  Linux host, fleet heartbeats not arriving, apt/yum repo failures,
-  `unauthorized` token errors, or systemd service failures — even if they
-  don't explicitly say "debug" or "observe-agent." Covers agent status,
-  live log tailing, config validation, debug logging, datastream ingestion
-  verification, and common error patterns.
+    Troubleshoot and debug Observe Agent data collection on Linux hosts. Use
+    this skill whenever the user reports any host-side problem with Observe —
+    the agent failing to start, `observe-agent status` reporting errors,
+    `init-config` failing with unknown flags, "no data in Observe" from a
+    Linux host, fleet heartbeats not arriving, apt/yum repo failures,
+    `unauthorized` token errors, or systemd service failures — even if they
+    don't explicitly say "debug" or "observe-agent." Covers agent status,
+    live log tailing, config validation, debug logging, datastream ingestion
+    verification, and common error patterns.
 ---
 
 **MANDATORY:** Run `observe skill view debug-linux-host-collection --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view debug-linux-host-collection --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -187,9 +187,9 @@ If the above steps do not reveal the issue, enable verbose debug output. Edit `/
 
 ```yaml
 service:
-  telemetry:
-    logs:
-      level: debug
+    telemetry:
+        logs:
+            level: debug
 ```
 
 Then restart and watch the debug output:

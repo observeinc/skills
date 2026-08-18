@@ -1,9 +1,9 @@
 ---
 name: generate-opal
 description: >
-  Contains dataset kind selection, column selection rules, core syntax, and the skill index. NEVER
-  generate OPAL, and NEVER invoke an opal-* reference, without first loading
-  this skill.
+    Contains dataset kind selection, column selection rules, core syntax, and the skill index. NEVER
+    generate OPAL, and NEVER invoke an opal-* reference, without first loading
+    this skill.
 user-invocable: false
 ---
 
@@ -72,19 +72,19 @@ Results are consumed by an LLM with limited context. Always use pick_col to retu
 - **Primary key columns** from the schema's `primaryKey` array are MANDATORY in `pick_col`.
 - **Temporal columns** are MANDATORY in `pick_col` whenever `pick_col` is used.
 
-  - **Valid-from**: use the `row_start_time()` function directly in `pick_col` (e.g. `pick_col valid_from:row_start_time(), ...`). It always resolves to the dataset's valid-from column without you needing to know its name, and satisfies the requirement on any temporal dataset (Event, Interval, Resource; returns null on Tables). Prefer this over hardcoding a guessed name like `timestamp`, `BUNDLE_TIMESTAMP`, or `@."Valid From"`.
-  - **Valid-to**: if the dataset has a valid-to column (`validToField` is set — Resource and Interval kinds), you MUST also include it. Use the `row_end_time()` function directly in `pick_col` (e.g. `pick_col valid_to:row_end_time(), ...`), symmetric with `row_start_time()` for valid-from. Like `row_start_time()`, it resolves to the dataset's valid-to column without you needing to know its name. Prefer this over hardcoding a guessed name like `end_time` or `@."Valid To"`.
-  - **`statsby` is non-temporal** — it consumes the input's `valid_from`/`valid_to` and produces a Table. Do NOT add `valid_from:row_start_time()` or `valid_to:row_end_time()` to a `pick_col` that follows `statsby`; those columns no longer exist and the query will fail with `the field "<name>" does not exist among fields [...]`. After `statsby`, `pick_col` may include only the group-by and aggregate output columns.
-  - **After `align`/`aggregate`** (the metric verb), temporal columns DO persist — if you add `pick_col` after aggregation you MUST include them, using the same functions (`row_start_time()` for valid-from, `row_end_time()` for valid-to). If you omit `pick_col` entirely, temporal columns are retained automatically.
+    - **Valid-from**: use the `row_start_time()` function directly in `pick_col` (e.g. `pick_col valid_from:row_start_time(), ...`). It always resolves to the dataset's valid-from column without you needing to know its name, and satisfies the requirement on any temporal dataset (Event, Interval, Resource; returns null on Tables). Prefer this over hardcoding a guessed name like `timestamp`, `BUNDLE_TIMESTAMP`, or `@."Valid From"`.
+    - **Valid-to**: if the dataset has a valid-to column (`validToField` is set — Resource and Interval kinds), you MUST also include it. Use the `row_end_time()` function directly in `pick_col` (e.g. `pick_col valid_to:row_end_time(), ...`), symmetric with `row_start_time()` for valid-from. Like `row_start_time()`, it resolves to the dataset's valid-to column without you needing to know its name. Prefer this over hardcoding a guessed name like `end_time` or `@."Valid To"`.
+    - **`statsby` is non-temporal** — it consumes the input's `valid_from`/`valid_to` and produces a Table. Do NOT add `valid_from:row_start_time()` or `valid_to:row_end_time()` to a `pick_col` that follows `statsby`; those columns no longer exist and the query will fail with `the field "<name>" does not exist among fields [...]`. After `statsby`, `pick_col` may include only the group-by and aggregate output columns.
+    - **After `align`/`aggregate`** (the metric verb), temporal columns DO persist — if you add `pick_col` after aggregation you MUST include them, using the same functions (`row_start_time()` for valid-from, `row_end_time()` for valid-to). If you omit `pick_col` entirely, temporal columns are retained automatically.
 
-    WRONG: pick_col span_name, dur_ms, status_message, trace_id
-    CORRECT: pick_col valid_from:row_start_time(), valid_to:row_end_time(), span_name, dur_ms, status_message, trace_id
+        WRONG: pick_col span_name, dur_ms, status_message, trace_id
+        CORRECT: pick_col valid_from:row_start_time(), valid_to:row_end_time(), span_name, dur_ms, status_message, trace_id
 
-    Post-`statsby` (non-temporal) — temporal columns are GONE; do not add them:
+        Post-`statsby` (non-temporal) — temporal columns are GONE; do not add them:
 
-        WRONG:   ... | statsby ct:count(), group_by(svc) | pick_col valid_from:row_start_time(), valid_to:row_end_time(), svc, ct
-                ↑ FAILS with: the field "valid_from" does not exist among fields [svc, ct]
-        CORRECT: ... | statsby ct:count(), group_by(svc) | pick_col svc, ct
+          WRONG:   ... | statsby ct:count(), group_by(svc) | pick_col valid_from:row_start_time(), valid_to:row_end_time(), svc, ct
+                  ↑ FAILS with: the field "valid_from" does not exist among fields [svc, ct]
+          CORRECT: ... | statsby ct:count(), group_by(svc) | pick_col svc, ct
 
 - **Resource kind datasets** do NOT support `limit` — use `topk` instead. Table, Event, and Interval datasets DO support `limit`.
 - **`topk`/`bottomk`** require aggregate scoring: `topk 20, max(col)`. Never pass a bare column.

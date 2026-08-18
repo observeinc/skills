@@ -5,14 +5,14 @@
 1. Confirm the dataset has metric interface (check the dataset schema).
 2. Identify metric names from the schema or catalog — never guess metric names.
 3. **Map each metric to its `m_*` function before writing OPAL.** Read the metric's `type` field (e.g., `"gauge"`, `"tdigest"`, `"cumulativeCounter"`). Using the wrong function is a fatal validation error.
-   - `type` = `"gauge"` / `"cumulativeCounter"` / `"delta"` → `m("metric_name")`
-   - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-   - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-   - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+    - `type` = `"gauge"` / `"cumulativeCounter"` / `"delta"` → `m("metric_name")`
+    - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+    - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
+    - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
 4. **Verify dimension/tag field names from the dataset schema.** The top-level field that holds metric dimensions varies by dataset — it may be `tags`, `resource_attributes`, `labels`, or something else. NEVER assume `resource_attributes` exists. Check the schema's field list and use only fields that actually exist on the target dataset (see **Dimension Field Names Vary by Dataset** below).
 5. Choose output shape:
-   - Summary (default) → use `align options(bins: 1)` pattern
-   - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
+    - Summary (default) → use `align options(bins: 1)` pattern
+    - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
 6. For distribution metrics (tdigest, histogram, or exponential histogram), use the DOUBLE COMBINE pattern — `histogram_combine` in both `align` and `aggregate`.
 7. For cumulative counters (`type` = `"cumulativeCounter"`), never use `sum()` — use `rate()` or `delta_monotonic()`.
 
@@ -577,16 +577,16 @@ timewrap 7d, 2, "week"
 - **`align` does NOT accept `group_by`.** Dimensions are extracted in `aggregate`'s `group_by()`, never in `align`.
 - **`frame()` is a SEPARATE argument to `align`, NOT an option inside `options()`.** `options()` only accepts `bins`, `min_bin`, and `empty_bins`. To use a sliding window with `align`, pass `frame()` as a positional argument:
 
-  ```opal
-  align 1m, frame(back:10m), avg_mem:avg(m("memory_used"))
-  ```
+    ```opal
+    align 1m, frame(back:10m), avg_mem:avg(m("memory_used"))
+    ```
 
-  These are WRONG:
+    These are WRONG:
 
-  ```opal
-  align 1m, options(frame: 10m), avg_mem:avg(m("memory_used"))
-  align options(frame: 7d), val:sum(m("x"))
-  ```
+    ```opal
+    align 1m, options(frame: 10m), avg_mem:avg(m("memory_used"))
+    align options(frame: 7d), val:sum(m("x"))
+    ```
 
 - **`make_col` before `align` is discarded.** `align` resets the column set. If you need a derived column in `aggregate group_by()`, create it AFTER `align`.
 - **Don't use `_c_valid_from` for metric visualizations.** The time column is the one named by `validFromField` in the schema; reference it generically with `row_start_time()` (returns the `validFromField` value) rather than guessing its name.

@@ -4,11 +4,11 @@
 
 1. Identify the datasets to combine (confirm the dataset IDs and schemas).
 2. Determine what you need from the join:
-   - Only filtering rows (no extra columns) → use `exists` / `not_exists`
-   - Enriching events with Resource/Table metadata → use `lookup`
-   - Combining columns from two Event datasets → use `join` / `leftjoin`
-   - All rows from both sides → use `fulljoin`
-   - Temporal event sequencing → use `follow` / `follow_not`
+    - Only filtering rows (no extra columns) → use `exists` / `not_exists`
+    - Enriching events with Resource/Table metadata → use `lookup`
+    - Combining columns from two Event datasets → use `join` / `leftjoin`
+    - All rows from both sides → use `fulljoin`
+    - Temporal event sequencing → use `follow` / `follow_not`
 3. Always pick the cheapest join type that works (see cost hierarchy below).
 4. Use `on(local_col = @"input_name".remote_col)` syntax for all join predicates. For multi-key joins, use `and`: `on(col1 = @"input".key1 and col2 = @"input".key2)`. Use `@"input_name".column` for column bindings.
 5. **Use input names, not dataset IDs.** `@"input_name"` must match the `inputName` from your GetQueryCard `inputs` parameter — never use the raw numeric dataset ID. For example, if your inputs include `{inputName: "customer", datasetId: "41007202"}`, write `@"customer".field`, not `@"41007202".field`. Always quote the reference: `@"input_name"` — bare `@id` fails when the ID is numeric or contains special characters.

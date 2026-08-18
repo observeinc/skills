@@ -1,13 +1,13 @@
 ---
 name: setup-linux-host-backend
 description: >-
-  Create the Observe backend resources required for Host Explorer:
-  datastreams, content packages, and an ingest token. Use this skill whenever
-  the user needs to provision Observe backend objects for a Linux host —
-  whether they're starting a fresh setup, recreating resources after manual
-  removal, adding a missing datastream, or generating an ingest token for
-  the observe-agent — and even when they don't explicitly say "datastream"
-  or "backend." Also invoked by deploy-linux-host-explorer during full setup.
+    Create the Observe backend resources required for Host Explorer:
+    datastreams, content packages, and an ingest token. Use this skill whenever
+    the user needs to provision Observe backend objects for a Linux host —
+    whether they're starting a fresh setup, recreating resources after manual
+    removal, adding a missing datastream, or generating an ingest token for
+    the observe-agent — and even when they don't explicitly say "datastream"
+    or "backend." Also invoked by deploy-linux-host-explorer during full setup.
 ---
 
 **MANDATORY:** Run `observe skill view setup-linux-host-backend --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view setup-linux-host-backend --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.

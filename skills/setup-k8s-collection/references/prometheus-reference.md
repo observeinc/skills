@@ -10,7 +10,7 @@ Expose metrics from a pod using one of these methods:
 
 ```yaml
 annotations:
-  prometheus.io/port: "9999"
+    prometheus.io/port: "9999"
 ```
 
 Only surfaces one HTTP endpoint.
@@ -19,10 +19,10 @@ Only surfaces one HTTP endpoint.
 
 ```yaml
 ports:
-  - containerPort: 9999
-    name: metrics
-  - containerPort: 12345
-    name: sidecar-metrics
+    - containerPort: 9999
+      name: metrics
+    - containerPort: 12345
+      name: sidecar-metrics
 ```
 
 Any port with a name ending in `metrics` is discovered.
@@ -40,14 +40,14 @@ Any port with a name ending in `metrics` is discovered.
 
 ```yaml
 application:
-  prometheusScrape:
-    enabled: true
-    interval: 60s
-    namespaceDropRegex: (.*istio.*|.*ingress.*|kube-system)
-    namespaceKeepRegex: (.*)
-    portKeepRegex: .*metrics
-    metricDropRegex: ""
-    metricKeepRegex: (.*)
+    prometheusScrape:
+        enabled: true
+        interval: 60s
+        namespaceDropRegex: (.*istio.*|.*ingress.*|kube-system)
+        namespaceKeepRegex: (.*)
+        portKeepRegex: .*metrics
+        metricDropRegex: ""
+        metricKeepRegex: (.*)
 ```
 
 Key fields:
@@ -63,9 +63,9 @@ For high-volume metric scraping, use a dedicated deployment:
 
 ```yaml
 application:
-  prometheusScrape:
-    enabled: true
-    independentDeployment: true
+    prometheusScrape:
+        enabled: true
+        independentDeployment: true
 ```
 
 ## Applying Changes

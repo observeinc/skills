@@ -28,21 +28,21 @@ Expected metric families by language:
 - `Node.js`: `v8js.gc.duration`, `v8js.memory.heap.used`, `v8js.memory.heap.limit`, `nodejs.eventloop.delay.p99`
 - `Python`: `process.runtime.cpython.gc_count`, `process.runtime.cpython.thread_count`
 - `.NET`:
-  - If the app uses .NET 9+:
-    - `dotnet.gc.collections`,
-    - `dotnet.gc.pause.time`,
-    - `dotnet.thread_pool.thread.count`,
-    - `dotnet.exceptions`
-  - If the app uses .NET <9:
-    - `process.runtime.dotnet.gc.collections.count`,
-    - `process.runtime.dotnet.gc.pause.time`,
-    - `process.runtime.dotnet.thread_pool.thread.count`,
-    - `process.runtime.dotnet.exceptions.count`
+    - If the app uses .NET 9+:
+        - `dotnet.gc.collections`,
+        - `dotnet.gc.pause.time`,
+        - `dotnet.thread_pool.thread.count`,
+        - `dotnet.exceptions`
+    - If the app uses .NET <9:
+        - `process.runtime.dotnet.gc.collections.count`,
+        - `process.runtime.dotnet.gc.pause.time`,
+        - `process.runtime.dotnet.thread_pool.thread.count`,
+        - `process.runtime.dotnet.exceptions.count`
 - `Go`:
-  - `process.runtime.go.mem.heap_alloc`,
-  - `process.runtime.go.mem.heap_objects`,
-  - `process.runtime.go.gc.pause_ns.sum`,
-  - `process.runtime.go.gc.pause_ns.count`,
-  - `process.runtime.go.goroutines`,
-  - `process.runtime.go.cgo.calls`
+    - `process.runtime.go.mem.heap_alloc`,
+    - `process.runtime.go.mem.heap_objects`,
+    - `process.runtime.go.gc.pause_ns.sum`,
+    - `process.runtime.go.gc.pause_ns.count`,
+    - `process.runtime.go.goroutines`,
+    - `process.runtime.go.cgo.calls`
 - `Ruby`: no standard runtime metrics. Skip this check.

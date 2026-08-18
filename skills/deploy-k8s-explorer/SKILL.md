@@ -1,15 +1,15 @@
 ---
 name: deploy-k8s-explorer
 description: >-
-  End-to-end onboarding of a Kubernetes cluster to Observe — creates the
-  backend datastreams + content via the Observe CLI and deploys the
-  observe/agent helm chart. Use for ANY request to install or set up the
-  Observe Agent on Kubernetes, onboard a K8s cluster to Observe, or send
-  K8s data to Observe — across any flavor (EKS, GKE, AKS, GKE Autopilot,
-  EKS Fargate, EKS Auto Mode, minikube, kind, on-prem). Do NOT route a
-  Kubernetes onboarding request to a generic datastream-creation flow;
-  always orchestrate via this skill, which delegates to setup-k8s-backend
-  and setup-k8s-collection.
+    End-to-end onboarding of a Kubernetes cluster to Observe — creates the
+    backend datastreams + content via the Observe CLI and deploys the
+    observe/agent helm chart. Use for ANY request to install or set up the
+    Observe Agent on Kubernetes, onboard a K8s cluster to Observe, or send
+    K8s data to Observe — across any flavor (EKS, GKE, AKS, GKE Autopilot,
+    EKS Fargate, EKS Auto Mode, minikube, kind, on-prem). Do NOT route a
+    Kubernetes onboarding request to a generic datastream-creation flow;
+    always orchestrate via this skill, which delegates to setup-k8s-backend
+    and setup-k8s-collection.
 ---
 
 **MANDATORY:** Run `observe skill view deploy-k8s-explorer --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view deploy-k8s-explorer --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -126,30 +126,30 @@ If the user selected EKS Fargate:
 1. Confirm a **Fargate profile** exists for the `observe` namespace. If not, show the `eksctl create fargateprofile` command (see [references/fargate-reference.md](references/fargate-reference.md)).
 2. Confirm the **OpenTelemetry Operator** is installed. If not, show the helm install command.
 3. Collect **namespace-to-service-account mappings** for pods to monitor:
-   ```
-   AskQuestion:
-     id: fargate-sa
-     prompt: "List the namespaces and service accounts for pods you want to monitor (e.g., 'default: [my-app-sa]'). Enter 'skip' to set this up later."
-   ```
+    ```
+    AskQuestion:
+      id: fargate-sa
+      prompt: "List the namespaces and service accounts for pods you want to monitor (e.g., 'default: [my-app-sa]'). Enter 'skip' to set this up later."
+    ```
 
 ### Step 1f: Optional add-ons (multi-select, manifest-driven)
 
 Operate against the option manifest in [`references/options.md`](./references/options.md). The manifest is the source of truth for option ids, labels, prompts, follow-ups, sub-choices, mutual exclusions, and the docs page where each option's YAML configuration lives.
 
 1. **Build the multi-select prompt** from the manifest:
-   - Include every option with `tier: primary` as a multi-select choice, using each option's `label`.
-   - Filter out any option whose `unsupported_platforms` includes the infrastructure type chosen in Step 1a (e.g. `prom_scrape` is omitted on EKS Fargate).
-   - Add `Show me other available options` and `None — skip add-ons` as sentinel choices.
+    - Include every option with `tier: primary` as a multi-select choice, using each option's `label`.
+    - Filter out any option whose `unsupported_platforms` includes the infrastructure type chosen in Step 1a (e.g. `prom_scrape` is omitted on EKS Fargate).
+    - Add `Show me other available options` and `None — skip add-ons` as sentinel choices.
 
-   Ask the user once:
+    Ask the user once:
 
-   > "Any of these optional agent add-ons? Pick whichever apply (or skip):"
+    > "Any of these optional agent add-ons? Pick whichever apply (or skip):"
 
 2. **For each selected primary option**, walk its manifest block:
-   - If the option has a top-level `prompt`, ask it and capture the answer.
-   - If the option has `choices`, present them as a single-select; for the chosen sub-choice, run its `followups` (if any).
-   - If the option has top-level `followups`, run each in order. Mark `optional: true` follow-ups by accepting `none`/`skip` without re-prompting.
-   - Enforce `excludes` symmetrically: if the user picks two options or sub-choices that exclude each other (e.g. `multiline.auto` and `multiline.custom`), surface the conflict and require a resolution before continuing.
+    - If the option has a top-level `prompt`, ask it and capture the answer.
+    - If the option has `choices`, present them as a single-select; for the chosen sub-choice, run its `followups` (if any).
+    - If the option has top-level `followups`, run each in order. Mark `optional: true` follow-ups by accepting `none`/`skip` without re-prompting.
+    - Enforce `excludes` symmetrically: if the user picks two options or sub-choices that exclude each other (e.g. `multiline.auto` and `multiline.custom`), surface the conflict and require a resolution before continuing.
 
 3. **If the user picks "Show me other available options"**, present every manifest entry with `tier: other` as a multi-select (using each option's `label`). For any selected, capture the id; the agent will walk the user through that option's `docs_anchor` at apply time (no scripted follow-ups in the skill).
 
@@ -329,18 +329,18 @@ At any phase, if an operation fails:
 1. Show the full error message
 2. Show what has been created so far
 3. Ask the user how to proceed:
-   ```
-   AskQuestion:
-     id: error-recovery
-     prompt: "An error occurred. How would you like to proceed?"
-     options:
-       - id: retry
-         label: "Retry the failed step"
-       - id: skip
-         label: "Skip this step and continue"
-       - id: abort
-         label: "Stop here (resources created so far are kept)"
-   ```
+    ```
+    AskQuestion:
+      id: error-recovery
+      prompt: "An error occurred. How would you like to proceed?"
+      options:
+        - id: retry
+          label: "Retry the failed step"
+        - id: skip
+          label: "Skip this step and continue"
+        - id: abort
+          label: "Stop here (resources created so far are kept)"
+    ```
 
 ---
 
@@ -381,9 +381,9 @@ This skill stands up the cluster-side collection plane (datastreams, agent, OTLP
 
 - **Do not modify the application or its build/deploy pipeline yourself.** If a change is required, hand off to the appropriate skill so the user gets a complete, tested workflow rather than partial advice.
 - Ask the user whether they want to instrument an application now, set it up later, or just confirm what they already have:
-  - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
-  - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
-  - If they're not ready to instrument anything yet — exit; the cluster-side setup is complete and the OTLP endpoints will be ready whenever they are.
+    - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
+    - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
+    - If they're not ready to instrument anything yet — exit; the cluster-side setup is complete and the OTLP endpoints will be ready whenever they are.
 
 | Skill                                | Description                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |

@@ -136,11 +136,11 @@ When a question involves counting operational occurrences, you MUST determine wh
 **Decision tree — for each concept in the question:**
 
 1. Does a `_total` or `_count` counter metric exist for this concept?
-   - **YES** → Use the counter metric with `delta_monotonic`. Examples: restarts (`_restarts_total`), errors (`_errors_total`), requests (`_requests_total`), OOM kills (`_oom_kills_total`), bytes transferred.
-   - **NO** → Continue to step 2.
+    - **YES** → Use the counter metric with `delta_monotonic`. Examples: restarts (`_restarts_total`), errors (`_errors_total`), requests (`_requests_total`), OOM kills (`_oom_kills_total`), bytes transferred.
+    - **NO** → Continue to step 2.
 2. Is the concept a discrete, categorical event with a reason/type field?
-   - **YES** → Use the event dataset filtered by reason/type. Examples: scheduled, evicted, deployed, pulled.
-   - **NO** → Search for alternative data sources or ask the user.
+    - **YES** → Use the event dataset filtered by reason/type. Examples: scheduled, evicted, deployed, pulled.
+    - **NO** → Search for alternative data sources or ask the user.
 
 **Do NOT use event reason strings as proxies for counter-based operations.** Event reasons are categorical labels that don't map 1:1 to operational counts. For example, an Event with reason "Killing" fires during normal rollouts — not just crashes — and "BackOff" only covers CrashLoopBackOff, not all restart scenarios. If a counter metric exists for the concept (e.g., `_restarts_total`), always prefer it.
 

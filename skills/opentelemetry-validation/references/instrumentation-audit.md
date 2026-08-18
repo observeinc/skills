@@ -285,32 +285,32 @@ sort desc(span_count)'
 Evaluation procedure (do not skip — if you cannot complete a step, mark the finding as `pending` with a reason, do not guess):
 
 1. **Discover the latest published schema version.** Fetch with `curl` in the shell, never a web-page/markdown fetch tool — markdown conversion collapses JSON and YAML formatting and makes the result unparseable.
-   - Run `curl -sS "https://api.github.com/repos/open-telemetry/semantic-conventions/contents/schemas" | jq -r '.[].name' | sort -V | tail -1`. This lists every published schema version and returns the highest; `sort -V` orders versions numerically, so `1.40.0` / `1.41.0` rank above `1.9.0` (a plain sort wrongly picks `1.9.0`).
-   - Do NOT parse `https://github.com/open-telemetry/semantic-conventions/tree/main/schemas` — it is JS-rendered and the file list may come back empty or partial.
-   - Do NOT use `releases/latest` — it returns the repo release tag (e.g. `v1.41.1`), which can be ahead of the schemas directory and will 404 when fetched as a schema file.
-   - Set `latest_version` to that value, then confirm the raw file exists: `curl -sS -o /dev/null -w '%{http_code}\n' "https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/schemas/<latest_version>"` should print `200`.
-   - If either `curl` fails (non-2xx, rate limited, or empty), mark all schema-drift findings as `pending` and report the failure. Do NOT guess the latest version.
+    - Run `curl -sS "https://api.github.com/repos/open-telemetry/semantic-conventions/contents/schemas" | jq -r '.[].name' | sort -V | tail -1`. This lists every published schema version and returns the highest; `sort -V` orders versions numerically, so `1.40.0` / `1.41.0` rank above `1.9.0` (a plain sort wrongly picks `1.9.0`).
+    - Do NOT parse `https://github.com/open-telemetry/semantic-conventions/tree/main/schemas` — it is JS-rendered and the file list may come back empty or partial.
+    - Do NOT use `releases/latest` — it returns the repo release tag (e.g. `v1.41.1`), which can be ahead of the schemas directory and will 404 when fetched as a schema file.
+    - Set `latest_version` to that value, then confirm the raw file exists: `curl -sS -o /dev/null -w '%{http_code}\n' "https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/schemas/<latest_version>"` should print `200`.
+    - If either `curl` fails (non-2xx, rate limited, or empty), mark all schema-drift findings as `pending` and report the failure. Do NOT guess the latest version.
 
 2. **Classify each library's `schema` value:**
-   - `schema` is null/empty → `warning` (`missing_schema_url`). Stop; skip steps 3–5 for this row.
-   - `schema` equals `latest_version` → `information` (`schema_current`). Stop.
-   - `schema` is older than `latest_version` → continue to step 3.
+    - `schema` is null/empty → `warning` (`missing_schema_url`). Stop; skip steps 3–5 for this row.
+    - `schema` equals `latest_version` → `information` (`schema_current`). Stop.
+    - `schema` is older than `latest_version` → continue to step 3.
 
 3. **Fetch the latest schema file ONCE per run with `curl`** (never a web-page/markdown fetch — it collapses the YAML indentation that defines the `versions:` hierarchy). Run `curl -sS "https://raw.githubusercontent.com/open-telemetry/semantic-conventions/main/schemas/<latest_version>"`. OTel schema files are cumulative — the file at `latest_version` contains a `versions:` map covering every prior release back to 1.4.0, so you do NOT need to fetch intermediate schemas. Cache the parsed YAML and reuse it for every library evaluated in this run.
 
 4. **For each library with an older `schema`, extract the change chain** from the cached YAML:
-   - Walk the `versions:` map from the version just above `emitted_version` through `latest_version` (inclusive).
-   - From each version block, collect entries under `all.changes`, `spans.changes`, `metrics.changes`, and `resources.changes`. Relevant entry kinds: `rename_attributes`, `rename_metrics`, `remove_attributes`.
-   - Tally `attribute_renames`, `metric_renames`, and `attribute_removals` across that range.
+    - Walk the `versions:` map from the version just above `emitted_version` through `latest_version` (inclusive).
+    - From each version block, collect entries under `all.changes`, `spans.changes`, `metrics.changes`, and `resources.changes`. Relevant entry kinds: `rename_attributes`, `rename_metrics`, `remove_attributes`.
+    - Tally `attribute_renames`, `metric_renames`, and `attribute_removals` across that range.
 
 5. **Required `evidence` shape** for every schema-drift finding (level `improvement`, id `schema_drift`):
-   - `emitted_schema_url`
-   - `latest_schema_url`
-   - `minor_version_gap` (latest minor − emitted minor)
-   - `attribute_renames`, `metric_renames`, `attribute_removals` (integer counts)
-   - If the SUM of those three counts is ≤ 25, also include `changes[]` with `{from_version, to_version, kind, mapping}` entries verbatim from the YAML. If the sum is > 25, omit `changes[]` to keep the finding readable — the counts plus an upgrade recommendation are sufficient.
+    - `emitted_schema_url`
+    - `latest_schema_url`
+    - `minor_version_gap` (latest minor − emitted minor)
+    - `attribute_renames`, `metric_renames`, `attribute_removals` (integer counts)
+    - If the SUM of those three counts is ≤ 25, also include `changes[]` with `{from_version, to_version, kind, mapping}` entries verbatim from the YAML. If the sum is > 25, omit `changes[]` to keep the finding readable — the counts plus an upgrade recommendation are sufficient.
 
-   A finding that lacks the required counts is invalid — re-run the step or downgrade to `pending`.
+    A finding that lacks the required counts is invalid — re-run the step or downgrade to `pending`.
 
 ### Check 9: Resource Schema URL
 
@@ -351,16 +351,16 @@ When reporting manual audit results, use a shape compatible with the future `apm
 Use these `affected[]` shapes:
 
 - **instrumentation**
-  - `environment`
-  - `serviceName`
-  - `serviceNamespace`
-  - `serviceVersion`
-  - `instrumentationLibraryName`
-  - `instrumentationLibraryVersion`
+    - `environment`
+    - `serviceName`
+    - `serviceNamespace`
+    - `serviceVersion`
+    - `instrumentationLibraryName`
+    - `instrumentationLibraryVersion`
 - **service**
-  - `environment`
-  - `serviceName`
-  - `serviceNamespace`
-  - `serviceVersion`
+    - `environment`
+    - `serviceName`
+    - `serviceNamespace`
+    - `serviceVersion`
 
 If a finding is tied to a specific library version, prefer an `affected[]` entry of type `instrumentation`. If the finding applies to the whole service, use an entry of type `service`.

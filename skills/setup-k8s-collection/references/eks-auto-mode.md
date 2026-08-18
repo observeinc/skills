@@ -17,7 +17,7 @@ Apply this before `helm install` so DaemonSets can preempt and trigger Karpenter
 apiVersion: scheduling.k8s.io/v1
 kind: PriorityClass
 metadata:
-  name: observe-agent-priority
+    name: observe-agent-priority
 globalDefault: false
 value: 10000
 preemptionPolicy: "PreemptLowerPriority"
@@ -33,11 +33,11 @@ Start from the Standard Flow values, then add:
 
 ```yaml
 node:
-  kubeletstats:
-    useNodeIp: true
+    kubeletstats:
+        useNodeIp: true
 
 node-logs-metrics:
-  priorityClassName: "observe-agent-priority"
+    priorityClassName: "observe-agent-priority"
 ```
 
 Why these matter:

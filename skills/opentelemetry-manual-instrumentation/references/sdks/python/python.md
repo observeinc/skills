@@ -163,14 +163,14 @@ through `async`/`await` and within a task. The neutral model is
   start the span before creating the task, or pass context explicitly.
 - **Threads / executors.** A new `threading.Thread` or `ThreadPoolExecutor` worker does
   **not** inherit the context. Capture and re-attach it:
-  ```python
-  from opentelemetry import context as otel_context
-  token = otel_context.attach(otel_context.get_current())  # in the worker, from captured ctx
-  try:
-      ...
-  finally:
-      otel_context.detach(token)
-  ```
+    ```python
+    from opentelemetry import context as otel_context
+    token = otel_context.attach(otel_context.get_current())  # in the worker, from captured ctx
+    try:
+        ...
+    finally:
+        otel_context.detach(token)
+    ```
 - **Cross-service.** Inject on the client, extract on the server:
   `from opentelemetry.propagate import inject, extract` — `inject(headers)` before an
   outbound request; `extract(incoming_headers)` to get a context to start the server span

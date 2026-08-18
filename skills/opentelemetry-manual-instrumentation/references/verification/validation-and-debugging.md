@@ -16,7 +16,7 @@ instrumentation bug:
 - The exporter **protocol matches the receiver** (gRPC↔4317, http/protobuf↔4318) —
   a mismatch drops data silently (see **OTLP delivery reference** below).
 - If a Collector is in the path, it's **accepting** (`otelcol_receiver_accepted_*`
-  > 0) and **exporting** (`otelcol_exporter_sent_* > 0`, `send_failed_* == 0`).
+    > 0) and **exporting** (`otelcol_exporter_sent_* > 0`, `send_failed_* == 0`).
 - Each signal is exercised **separately** — a working trace export does not prove
   metrics or logs are delivered.
 

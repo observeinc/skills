@@ -247,10 +247,10 @@ The procedure (steps 1–3 are user-owned):
    instrumented path.
 
 4. **Verify each level:**
-   - observe-agent: find the target telemetry in the observe-agent's debug exporter output.
-   - Observe: run the report's example query with **`observe-cli`** (OPAL via
-     **`generate-opal`**), with the observe-agent pointed at the tenant and `observe-cli`
-     authenticated to it.
+    - observe-agent: find the target telemetry in the observe-agent's debug exporter output.
+    - Observe: run the report's example query with **`observe-cli`** (OPAL via
+      **`generate-opal`**), with the observe-agent pointed at the tenant and `observe-cli`
+      authenticated to it.
 
 5. **On failure, run debug-linux-host-collection (Linux host) or debug-k8s-collection
    (Kubernetes).** Report a level as `Blocked` only after deploy and a debug pass both fail; say
