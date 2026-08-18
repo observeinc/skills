@@ -95,15 +95,15 @@ Register it as a Fastify plugin in your application code:
 ### CJS
 
 ```javascript
-const { FastifyOtel } = require("@fastify/otel");
-fastify.register(FastifyOtel, { serviceName: "<service-name>" });
+const {FastifyOtel} = require("@fastify/otel");
+fastify.register(FastifyOtel, {serviceName: "<service-name>"});
 ```
 
 ### ESM / TypeScript
 
 ```typescript
-import { FastifyOtel } from "@fastify/otel";
-fastify.register(FastifyOtel, { serviceName: "<service-name>" });
+import {FastifyOtel} from "@fastify/otel";
+fastify.register(FastifyOtel, {serviceName: "<service-name>"});
 ```
 
 Start with the same flags from [Setup](#setup). `@fastify/otel` reads from the global `TracerProvider` registered by the auto-instrumentations — no additional SDK setup is required.
@@ -125,17 +125,12 @@ Create an instrumentation setup file at the project root:
 **CJS** — `instrumentation.cjs`
 
 ```javascript
-const { NodeSDK } = require("@opentelemetry/sdk-node");
-const {
-  getNodeAutoInstrumentations,
-} = require("@opentelemetry/auto-instrumentations-node");
-const { PrismaInstrumentation } = require("@prisma/instrumentation");
+const {NodeSDK} = require("@opentelemetry/sdk-node");
+const {getNodeAutoInstrumentations} = require("@opentelemetry/auto-instrumentations-node");
+const {PrismaInstrumentation} = require("@prisma/instrumentation");
 
 const sdk = new NodeSDK({
-  instrumentations: [
-    getNodeAutoInstrumentations(),
-    new PrismaInstrumentation(),
-  ],
+    instrumentations: [getNodeAutoInstrumentations(), new PrismaInstrumentation()],
 });
 
 sdk.start();
@@ -144,15 +139,12 @@ sdk.start();
 **ESM / TypeScript** — `instrumentation.mjs` or `instrumentation.ts`
 
 ```typescript
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
-import { PrismaInstrumentation } from "@prisma/instrumentation";
+import {NodeSDK} from "@opentelemetry/sdk-node";
+import {getNodeAutoInstrumentations} from "@opentelemetry/auto-instrumentations-node";
+import {PrismaInstrumentation} from "@prisma/instrumentation";
 
 const sdk = new NodeSDK({
-  instrumentations: [
-    getNodeAutoInstrumentations(),
-    new PrismaInstrumentation(),
-  ],
+    instrumentations: [getNodeAutoInstrumentations(), new PrismaInstrumentation()],
 });
 
 sdk.start();

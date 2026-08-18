@@ -6,10 +6,10 @@
 2. Determine the body field type (STRING vs OBJECT) from schema — default to wrapping with `string(body)`.
 3. **Check for token indexes** on the body field — see Token Index Awareness below. This determines your operator choice and may influence dataset selection.
 4. Choose the filtering approach based on token index availability:
-   - **Default (no explicit index info shown)** → use `search(string(body), "text")` — index-aware: uses the token index when one exists and falls back to a normal scan when it doesn't. This is the safe choice when the schema doesn't explicitly mark the field with `[TokenIndex]`.
-   - **Body explicitly marked `[TokenIndex]` in the schema** → use `~` operator (fast indexed search). Only use `~` when you can SEE `[TokenIndex]` next to the field in the dataset's `## Fields` section.
-   - **Pattern with alternation or flags AND body is `[TokenIndex]`** → use `~ /regex/i` (token-indexed regex literal).
-   - **Pattern requires regex semantics that `~` does not support** (e.g. anchors, complex character classes) → use `match_regex(string(body), regex("pattern", "i"))`.
+    - **Default (no explicit index info shown)** → use `search(string(body), "text")` — index-aware: uses the token index when one exists and falls back to a normal scan when it doesn't. This is the safe choice when the schema doesn't explicitly mark the field with `[TokenIndex]`.
+    - **Body explicitly marked `[TokenIndex]` in the schema** → use `~` operator (fast indexed search). Only use `~` when you can SEE `[TokenIndex]` next to the field in the dataset's `## Fields` section.
+    - **Pattern with alternation or flags AND body is `[TokenIndex]`** → use `~ /regex/i` (token-indexed regex literal).
+    - **Pattern requires regex semantics that `~` does not support** (e.g. anchors, complex character classes) → use `match_regex(string(body), regex("pattern", "i"))`.
 5. If aggregation is needed, use `statsby` with appropriate `group_by`.
 6. If the question asks about structured/JSON logs, use `parse_json(string(body))` to extract fields before filtering or aggregating.
 7. If the question asks for top-N results, use `topk` after aggregation.

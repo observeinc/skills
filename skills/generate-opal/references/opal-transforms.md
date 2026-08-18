@@ -3,11 +3,11 @@
 ## Workflow
 
 1. Identify the transform needed:
-   - Parsing JSON/text/KV data → see **Semistructured Data Parsing** (use the decision tree below)
-   - Base64, URI encoding/decoding, or string manipulation → see **Encoding, Decoding, and String Utilities**
-   - Reshaping rows↔columns → see **Pivot / Unpivot**
-   - Per-row computation over related rows (rank, lag, moving avg) → see **Window Functions**
-   - Duration/timestamp math → load [opal-duration](opal-duration.md)
+    - Parsing JSON/text/KV data → see **Semistructured Data Parsing** (use the decision tree below)
+    - Base64, URI encoding/decoding, or string manipulation → see **Encoding, Decoding, and String Utilities**
+    - Reshaping rows↔columns → see **Pivot / Unpivot**
+    - Per-row computation over related rows (rank, lag, moving avg) → see **Window Functions**
+    - Duration/timestamp math → load [opal-duration](opal-duration.md)
 2. For parsing: determine the data shape (JSON string, nested object, structured text, key=value) and pick the matching tool from the decision tree.
 3. For window functions: always specify `group_by()` for partitioning and `order_by()` for row ordering.
 
@@ -116,9 +116,9 @@ OPAL function names do NOT follow other languages. Use `decode_base64` not `base
 - `encode_uri_component(str)` — Percent-encode all special characters.
 - `parse_hex(hexstr)` — Parse hex string to int64.
 
-  make_col decoded:decode_base64(string(encoded_field))
-  make_col decoded_url_safe:decode_base64(string(encoded_field), true)
-  make_col clean_path:decode_uri_component(string(url_path))
+    make_col decoded:decode_base64(string(encoded_field))
+    make_col decoded_url_safe:decode_base64(string(encoded_field), true)
+    make_col clean_path:decode_uri_component(string(url_path))
 
 ### String utilities
 
@@ -135,9 +135,9 @@ OPAL function names do NOT follow other languages. Use `decode_base64` not `base
 - `starts_with(str, prefix)` / `ends_with(str, suffix)` — Prefix/suffix test (returns bool).
 - `hash(str, ...)` — Signed 64-bit hash of one or more values.
 
-  make_col name_lower:lower(string(name))
-  make_col first_segment:split_part(string(path), "/", 1)
-  make_col display:concat_strings(string(first_name), " ", string(last_name))
+    make_col name_lower:lower(string(name))
+    make_col first_segment:split_part(string(path), "/", 1)
+    make_col display:concat_strings(string(first_name), " ", string(last_name))
 
 ---
 

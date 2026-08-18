@@ -1,13 +1,13 @@
 ---
 name: setup-k8s-backend
 description: >-
-  Create the Observe backend resources required for Kubernetes Explorer:
-  datastreams, content packages, and an ingest token. Use this skill whenever
-  the user needs to provision Observe backend objects for K8s monitoring —
-  whether they're starting a fresh setup, recreating resources after manual
-  removal, adding a missing datastream, or generating an ingest token for
-  the helm chart — and even when they don't explicitly say "datastream" or
-  "backend." Also invoked by deploy-k8s-explorer during full setup.
+    Create the Observe backend resources required for Kubernetes Explorer:
+    datastreams, content packages, and an ingest token. Use this skill whenever
+    the user needs to provision Observe backend objects for K8s monitoring —
+    whether they're starting a fresh setup, recreating resources after manual
+    removal, adding a missing datastream, or generating an ingest token for
+    the helm chart — and even when they don't explicitly say "datastream" or
+    "backend." Also invoked by deploy-k8s-explorer during full setup.
 ---
 
 **MANDATORY:** Run `observe skill view setup-k8s-backend --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view setup-k8s-backend --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.

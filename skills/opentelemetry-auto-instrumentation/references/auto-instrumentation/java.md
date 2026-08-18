@@ -146,25 +146,25 @@ Configure `application.yml`. Traces are exported via the OTel SDK exporter (gRPC
 
 ```yaml
 micronaut:
-  metrics:
-    enabled: true
-    binders:
-      jvm:
+    metrics:
         enabled: true
-    export:
-      otlp:
-        enabled: true
-        url: ${OTLP_ENDPOINT_HTTP}/v1/metrics
-        step: PT30S
+        binders:
+            jvm:
+                enabled: true
+        export:
+            otlp:
+                enabled: true
+                url: ${OTLP_ENDPOINT_HTTP}/v1/metrics
+                step: PT30S
 
 otel:
-  traces:
-    exporter: otlp
-  metrics:
-    exporter: otlp
-  exporter:
-    otlp:
-      endpoint: ${OTLP_ENDPOINT}
+    traces:
+        exporter: otlp
+    metrics:
+        exporter: otlp
+    exporter:
+        otlp:
+            endpoint: ${OTLP_ENDPOINT}
 ```
 
 Note that `micronaut.metrics.export.otlp.url` requires the HTTP endpoint with the `/v1/metrics` path, while `otel.exporter.otlp.endpoint` uses the gRPC endpoint.

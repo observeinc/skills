@@ -105,7 +105,7 @@ The actual command depends on the project's runtime:
 ## Manual tracing
 
 ```ts
-import { trace, SpanStatusCode, type Attributes } from "@opentelemetry/api";
+import {trace, SpanStatusCode, type Attributes} from "@opentelemetry/api";
 // Prefer constants from the installed semantic-conventions package over string
 // literals, e.g. ATTR_HTTP_RESPONSE_STATUS_CODE from '@opentelemetry/semantic-conventions'.
 
@@ -113,45 +113,45 @@ import { trace, SpanStatusCode, type Attributes } from "@opentelemetry/api";
 const tracer = trace.getTracer("orders.service", "1.0.0");
 
 interface ProcessOrderInput {
-  orderId: string; // application logic only; NEVER a span name or metric label
-  itemCount: number;
-  region: "us" | "eu" | "apac"; // bounded enum — safe as an attribute
+    orderId: string; // application logic only; NEVER a span name or metric label
+    itemCount: number;
+    region: "us" | "eu" | "apac"; // bounded enum — safe as an attribute
 }
 
 export async function processOrder(input: ProcessOrderInput): Promise<void> {
-  // Span name = operation class, NOT `process order ${input.orderId}` (high-cardinality).
-  return tracer.startActiveSpan("orders.process", async (span) => {
-    try {
-      // SAFE attributes: bounded, operation-describing, no PII. Custom business
-      // dimensions live under a bounded namespace (app.*) and should be documented.
-      const attrs: Attributes = {
-        "app.order.item_count": input.itemCount,
-        "app.order.region": input.region,
-      };
-      span.setAttributes(attrs);
+    // Span name = operation class, NOT `process order ${input.orderId}` (high-cardinality).
+    return tracer.startActiveSpan("orders.process", async (span) => {
+        try {
+            // SAFE attributes: bounded, operation-describing, no PII. Custom business
+            // dimensions live under a bounded namespace (app.*) and should be documented.
+            const attrs: Attributes = {
+                "app.order.item_count": input.itemCount,
+                "app.order.region": input.region,
+            };
+            span.setAttributes(attrs);
 
-      // A span EVENT marks a notable moment inside the operation (no extra span).
-      span.addEvent("validation.completed");
+            // A span EVENT marks a notable moment inside the operation (no extra span).
+            span.addEvent("validation.completed");
 
-      await reserveInventory(input);
-      await chargePayment(input);
-      // On success the status stays Unset (or set OK if your policy requires it).
-    } catch (err) {
-      // Messages may contain user input — see `../../review/cardinality.md`.
-      if (err instanceof Error) span.recordException(err);
-      span.setStatus({ code: SpanStatusCode.ERROR });
-      throw err; // rethrow — do NOT swallow after recording
-    } finally {
-      span.end(); // ALWAYS end the span, on every path
-    }
-  });
+            await reserveInventory(input);
+            await chargePayment(input);
+            // On success the status stays Unset (or set OK if your policy requires it).
+        } catch (err) {
+            // Messages may contain user input — see `../../review/cardinality.md`.
+            if (err instanceof Error) span.recordException(err);
+            span.setStatus({code: SpanStatusCode.ERROR});
+            throw err; // rethrow — do NOT swallow after recording
+        } finally {
+            span.end(); // ALWAYS end the span, on every path
+        }
+    });
 }
 ```
 
 ## Manual metrics
 
 ```ts
-import { metrics } from "@opentelemetry/api";
+import {metrics} from "@opentelemetry/api";
 
 // Acquire a meter ONCE with a stable scope name + version.
 const meter = metrics.getMeter("orders.service", "1.0.0");
@@ -160,29 +160,29 @@ const meter = metrics.getMeter("orders.service", "1.0.0");
 
 // Counter: monotonically increasing total.
 const ordersProcessed = meter.createCounter("app.orders.processed", {
-  description: "Total number of orders processed",
-  unit: "{order}",
+    description: "Total number of orders processed",
+    unit: "{order}",
 });
 
 // UpDownCounter: a level that goes up and down.
 const ordersInFlight = meter.createUpDownCounter("app.orders.in_flight", {
-  description: "Number of orders currently being processed",
-  unit: "{order}",
+    description: "Number of orders currently being processed",
+    unit: "{order}",
 });
 
 // Histogram: a distribution (durations/sizes), recorded in seconds.
 const orderDuration = meter.createHistogram("app.orders.duration", {
-  description: "Order processing duration",
-  unit: "s",
+    description: "Order processing duration",
+    unit: "s",
 });
 
 // ObservableGauge: a current value sampled via a callback.
 const queueDepthGauge = meter.createObservableGauge("app.orders.queue_depth", {
-  description: "Current depth of the order processing queue",
-  unit: "{order}",
+    description: "Current depth of the order processing queue",
+    unit: "{order}",
 });
 queueDepthGauge.addCallback((result) => {
-  result.observe(getCurrentQueueDepth(), { "app.queue.name": "orders" });
+    result.observe(getCurrentQueueDepth(), {"app.queue.name": "orders"});
 });
 
 // --- Recording measurements with BOUNDED attributes only. ---------------------
@@ -190,33 +190,30 @@ queueDepthGauge.addCallback((result) => {
 type Region = "us" | "eu" | "apac";
 type Outcome = "ok" | "error" | "timeout";
 
-export async function recordOrder(
-  region: Region,
-  run: () => Promise<void>,
-): Promise<void> {
-  const baseLabels = { "app.order.region": region }; // bounded — safe for metrics
-  ordersInFlight.add(1, baseLabels);
-  const startSeconds = process.hrtime.bigint();
+export async function recordOrder(region: Region, run: () => Promise<void>): Promise<void> {
+    const baseLabels = {"app.order.region": region}; // bounded — safe for metrics
+    ordersInFlight.add(1, baseLabels);
+    const startSeconds = process.hrtime.bigint();
 
-  let outcome: Outcome = "ok";
-  try {
-    await run();
-  } catch (err) {
-    outcome = "error";
-    throw err;
-  } finally {
-    const elapsedSeconds = Number(process.hrtime.bigint() - startSeconds) / 1e9;
-    // outcome is a bounded enum — safe as a label.
-    ordersProcessed.add(1, { ...baseLabels, "app.order.outcome": outcome });
-    orderDuration.record(elapsedSeconds, {
-      ...baseLabels,
-      "app.order.outcome": outcome,
-    });
-    ordersInFlight.add(-1, baseLabels);
+    let outcome: Outcome = "ok";
+    try {
+        await run();
+    } catch (err) {
+        outcome = "error";
+        throw err;
+    } finally {
+        const elapsedSeconds = Number(process.hrtime.bigint() - startSeconds) / 1e9;
+        // outcome is a bounded enum — safe as a label.
+        ordersProcessed.add(1, {...baseLabels, "app.order.outcome": outcome});
+        orderDuration.record(elapsedSeconds, {
+            ...baseLabels,
+            "app.order.outcome": outcome,
+        });
+        ordersInFlight.add(-1, baseLabels);
 
-    // ❌ NEVER — unbounded labels cause a cardinality explosion:
-    //   ordersProcessed.add(1, { order_id, user_id, url });
-  }
+        // ❌ NEVER — unbounded labels cause a cardinality explosion:
+        //   ordersProcessed.add(1, { order_id, user_id, url });
+    }
 }
 ```
 
@@ -263,15 +260,13 @@ span (neutral rule + the hook → processor → child-span decision order live i
   construct the reader with a fast interval — env vars alone aren't read when you
   build the reader manually, and the export **timeout must be ≤ the interval** (the
   SDK rejects interval 1000 with the default 30000 timeout):
-  ```ts
-  new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter(),
-    exportIntervalMillis: Number(
-      process.env.OTEL_METRIC_EXPORT_INTERVAL || 1000,
-    ),
-    exportTimeoutMillis: Number(process.env.OTEL_METRIC_EXPORT_TIMEOUT || 500),
-  });
-  ```
+    ```ts
+    new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter(),
+        exportIntervalMillis: Number(process.env.OTEL_METRIC_EXPORT_INTERVAL || 1000),
+        exportTimeoutMillis: Number(process.env.OTEL_METRIC_EXPORT_TIMEOUT || 500),
+    });
+    ```
 - **Use `metricReader` (singular)** in `NodeSDK` options; older SDKs silently ignore
   a mistyped `metricReaders` and fall back to env-based setup.
 - **Registration order:** `@opentelemetry/instrumentation-http` must be registered
@@ -305,55 +300,55 @@ harness.
 ### Pattern: Vitest / Jest (TypeScript)
 
 ```ts
-import { beforeAll, beforeEach, afterAll, describe, it, expect } from "vitest"; // or @jest/globals
-import { trace, SpanStatusCode, context } from "@opentelemetry/api";
+import {beforeAll, beforeEach, afterAll, describe, it, expect} from "vitest"; // or @jest/globals
+import {trace, SpanStatusCode, context} from "@opentelemetry/api";
 import {
-  BasicTracerProvider,
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
+    BasicTracerProvider,
+    InMemorySpanExporter,
+    SimpleSpanProcessor,
 } from "@opentelemetry/sdk-trace-base";
-import { processOrder } from "../src/orders";
+import {processOrder} from "../src/orders";
 
 let exporter: InMemorySpanExporter;
 let provider: BasicTracerProvider;
 
 beforeAll(() => {
-  exporter = new InMemorySpanExporter();
-  // 1.x supports the spanProcessors constructor option (see Pitfall 1).
-  provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
-  });
-  // Register ONCE, before the code under test resolves its tracer (Pitfall 2).
-  trace.setGlobalTracerProvider(provider);
+    exporter = new InMemorySpanExporter();
+    // 1.x supports the spanProcessors constructor option (see Pitfall 1).
+    provider = new BasicTracerProvider({
+        spanProcessors: [new SimpleSpanProcessor(exporter)],
+    });
+    // Register ONCE, before the code under test resolves its tracer (Pitfall 2).
+    trace.setGlobalTracerProvider(provider);
 });
 
 beforeEach(() => {
-  exporter.reset(); // isolate spans per test without rebinding the tracer
+    exporter.reset(); // isolate spans per test without rebinding the tracer
 });
 
 afterAll(async () => {
-  exporter.reset();
-  await provider.shutdown(); // clean global state — no cross-test contamination
-  trace.disable();
-  context.disable();
+    exporter.reset();
+    await provider.shutdown(); // clean global state — no cross-test contamination
+    trace.disable();
+    context.disable();
 });
 
 describe("processOrder telemetry", () => {
-  it("creates a stable, low-cardinality span on success", async () => {
-    await processOrder({ region: "us" });
-    const spans = exporter.getFinishedSpans();
-    expect(spans).toHaveLength(1);
-    expect(spans[0].name).toBe("orders.process");
-    expect(spans[0].name).not.toMatch(/\d{3,}/); // no embedded IDs
-    expect(spans[0].attributes["app.order.region"]).toBe("us");
-  });
+    it("creates a stable, low-cardinality span on success", async () => {
+        await processOrder({region: "us"});
+        const spans = exporter.getFinishedSpans();
+        expect(spans).toHaveLength(1);
+        expect(spans[0].name).toBe("orders.process");
+        expect(spans[0].name).not.toMatch(/\d{3,}/); // no embedded IDs
+        expect(spans[0].attributes["app.order.region"]).toBe("us");
+    });
 
-  it("records the exception and sets ERROR status on failure", async () => {
-    await expect(processOrder({ region: "us", fail: true })).rejects.toThrow();
-    const span = exporter.getFinishedSpans()[0];
-    expect(span.status.code).toBe(SpanStatusCode.ERROR);
-    expect(span.events.some((e) => e.name === "exception")).toBe(true);
-  });
+    it("records the exception and sets ERROR status on failure", async () => {
+        await expect(processOrder({region: "us", fail: true})).rejects.toThrow();
+        const span = exporter.getFinishedSpans()[0];
+        expect(span.status.code).toBe(SpanStatusCode.ERROR);
+        expect(span.events.some((e) => e.name === "exception")).toBe(true);
+    });
 });
 ```
 
@@ -384,16 +379,16 @@ and reset the **exporter** per test (not the provider); or (2) acquire the trace
 
 ```ts
 import {
-  MeterProvider,
-  InMemoryMetricExporter,
-  PeriodicExportingMetricReader,
-  AggregationTemporality,
+    MeterProvider,
+    InMemoryMetricExporter,
+    PeriodicExportingMetricReader,
+    AggregationTemporality,
 } from "@opentelemetry/sdk-metrics";
-import { metrics } from "@opentelemetry/api";
+import {metrics} from "@opentelemetry/api";
 
 const exporter = new InMemoryMetricExporter(AggregationTemporality.CUMULATIVE);
-const reader = new PeriodicExportingMetricReader({ exporter });
-const provider = new MeterProvider({ readers: [reader] });
+const reader = new PeriodicExportingMetricReader({exporter});
+const provider = new MeterProvider({readers: [reader]});
 metrics.setGlobalMeterProvider(provider);
 // exercise code, then: await reader.collect(); inspect exporter.getMetrics();
 // assert instrument name, type, unit, datapoint value/count, and BOUNDED attributes.
@@ -403,11 +398,11 @@ metrics.setGlobalMeterProvider(provider);
 
 ```ts
 import {
-  LoggerProvider,
-  InMemoryLogRecordExporter,
-  SimpleLogRecordProcessor,
+    LoggerProvider,
+    InMemoryLogRecordExporter,
+    SimpleLogRecordProcessor,
 } from "@opentelemetry/sdk-logs";
-import { logs } from "@opentelemetry/api-logs";
+import {logs} from "@opentelemetry/api-logs";
 
 const exporter = new InMemoryLogRecordExporter();
 const provider = new LoggerProvider();
@@ -490,30 +485,29 @@ on a top-level `import` placed after other imports (hoisting loads instrumented
 modules first → no-op).
 
 ```js
-import { NodeSDK } from "@opentelemetry/sdk-node";
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
-import { OTLPMetricExporter } from "@opentelemetry/exporter-metrics-otlp-proto";
-import { PeriodicExportingMetricReader } from "@opentelemetry/sdk-metrics";
-import { getNodeAutoInstrumentations } from "@opentelemetry/auto-instrumentations-node";
+import {NodeSDK} from "@opentelemetry/sdk-node";
+import {OTLPTraceExporter} from "@opentelemetry/exporter-trace-otlp-proto";
+import {OTLPMetricExporter} from "@opentelemetry/exporter-metrics-otlp-proto";
+import {PeriodicExportingMetricReader} from "@opentelemetry/sdk-metrics";
+import {getNodeAutoInstrumentations} from "@opentelemetry/auto-instrumentations-node";
 
 const sdk = new NodeSDK({
-  traceExporter: new OTLPTraceExporter(), // exporters read OTEL_EXPORTER_OTLP_* from env
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter(),
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
+    traceExporter: new OTLPTraceExporter(), // exporters read OTEL_EXPORTER_OTLP_* from env
+    metricReader: new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter(),
+    }),
+    instrumentations: [getNodeAutoInstrumentations()],
 });
 sdk.start();
 
 // Graceful shutdown so buffered telemetry flushes before exit.
 const shutdown = (signal) => () => {
-  sdk
-    .shutdown()
-    .then(() => process.exit(0))
-    .catch((err) => {
-      console.error(`Error shutting down OpenTelemetry SDK on ${signal}:`, err);
-      process.exit(1);
-    });
+    sdk.shutdown()
+        .then(() => process.exit(0))
+        .catch((err) => {
+            console.error(`Error shutting down OpenTelemetry SDK on ${signal}:`, err);
+            process.exit(1);
+        });
 };
 process.on("SIGTERM", shutdown("SIGTERM"));
 process.on("SIGINT", shutdown("SIGINT"));

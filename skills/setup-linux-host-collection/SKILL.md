@@ -1,14 +1,14 @@
 ---
 name: setup-linux-host-collection
 description: >-
-  Install and configure the Observe Agent on a Linux host. Use this skill
-  whenever the user mentions installing observe-agent, configuring host
-  monitoring on Ubuntu/Debian or RHEL/CentOS, running `init-config` for the
-  agent, upgrading or uninstalling the observe-agent package, or forwarding
-  application OTLP through the host agent — even if they don't name the
-  package or say "host collection" explicitly. Does not create Observe
-  backend resources (datastreams, content, tokens) — see setup-linux-host-backend
-  or deploy-linux-host-explorer for that.
+    Install and configure the Observe Agent on a Linux host. Use this skill
+    whenever the user mentions installing observe-agent, configuring host
+    monitoring on Ubuntu/Debian or RHEL/CentOS, running `init-config` for the
+    agent, upgrading or uninstalling the observe-agent package, or forwarding
+    application OTLP through the host agent — even if they don't name the
+    package or say "host collection" explicitly. Does not create Observe
+    backend resources (datastreams, content, tokens) — see setup-linux-host-backend
+    or deploy-linux-host-explorer for that.
 ---
 
 **MANDATORY:** Run `observe skill view setup-linux-host-collection --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view setup-linux-host-collection --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -227,13 +227,13 @@ If the user skipped `service.name` during initial setup (because they didn't yet
 
 1. **Re-run `init-config`** (the simpler option — overwrites the config but uses values they already know). Same single-line invocation as Step 4 above, this time with `--resource_attributes service.name=<SERVICE>,...` filled in.
 2. **Edit `/etc/observe-agent/observe-agent.yaml`** directly. Add (or update) the `resource_attributes` block:
-   ```yaml
-   resource_attributes:
-     service.name: <SERVICE>
-     deployment.environment.name: <ENV> # if known
-     team.name: <TEAM> # if known
-   ```
-   Then `sudo systemctl restart observe-agent`.
+    ```yaml
+    resource_attributes:
+        service.name: <SERVICE>
+        deployment.environment.name: <ENV> # if known
+        team.name: <TEAM> # if known
+    ```
+    Then `sudo systemctl restart observe-agent`.
 
 The `opentelemetry-auto-instrumentation` skill instructs the user to come back here once they know `service.name`, so this step is handled organically when they go through it.
 
@@ -241,9 +241,9 @@ The `opentelemetry-auto-instrumentation` skill instructs the user to come back h
 
 - **Do not modify the application or its build/deploy pipeline yourself.** If a change is required, hand off to the appropriate skill so the user gets a complete, tested workflow rather than partial advice.
 - Ask the user whether they want to instrument an application now, set it up later, or just confirm what they already have:
-  - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
-  - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
-  - If they're not ready to instrument anything yet — exit; the host-side setup is complete and the OTLP endpoints will be ready whenever they are.
+    - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
+    - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
+    - If they're not ready to instrument anything yet — exit; the host-side setup is complete and the OTLP endpoints will be ready whenever they are.
 
 | Skill                                | Description                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |

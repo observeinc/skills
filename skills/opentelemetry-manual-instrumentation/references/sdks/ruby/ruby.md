@@ -127,10 +127,10 @@ The active span lives in an `OpenTelemetry::Context` (fiber-local). The neutral 
 - **Within a fiber / normal call flow**, `in_span` sets the span current for the block and
   restores it after — children attach automatically.
 - **Threads.** A new `Thread` does **not** inherit the context. Capture and re-attach:
-  ```ruby
-  ctx = OpenTelemetry::Context.current
-  Thread.new { OpenTelemetry::Context.with_current(ctx) { work } }
-  ```
+    ```ruby
+    ctx = OpenTelemetry::Context.current
+    Thread.new { OpenTelemetry::Context.with_current(ctx) { work } }
+    ```
 - **Async / job enqueue.** Work resumed later (a queued job, a callback) must carry the
   context — propagate it explicitly the same way, or rely on the broker instrumentation
   (below) to inject/extract it.

@@ -26,30 +26,30 @@ For investigation work that is NOT a phi-correlation problem (recent deploys, de
 
 1. **Retrieve Alert Details**
 
-   - Search for the specific alert and related alerts
-   - Note the alert severity level, start time, and current status
-   - Identify the affected monitor and any captured values
+    - Search for the specific alert and related alerts
+    - Note the alert severity level, start time, and current status
+    - Identify the affected monitor and any captured values
 
 2. **Establish Timeline**
 
-   - When did the alert first fire?
-   - Is it still active or has it resolved?
-   - Have there been similar alerts recently?
+    - When did the alert first fire?
+    - Is it still active or has it resolved?
+    - Have there been similar alerts recently?
 
 3. **Identify Affected Services**
 
-   - Search the knowledge graph to resolve entity names (e.g. service.name, environment) for the affected component
-   - Find related datasets and metrics for the affected service (filter by resolved correlation tags when available)
+    - Search the knowledge graph to resolve entity names (e.g. service.name, environment) for the affected component
+    - Find related datasets and metrics for the affected service (filter by resolved correlation tags when available)
 
 4. **Trace-error-on-named-service gate (narrow, conditional).** Before running any data query or broad exploratory investigation, check whether **all three** of the following preconditions hold:
 
-   1. The user named a specific service (e.g. `redis-result-cache`, `apiserver`) — not a generic noun like "pods", "containers", "the cluster", "the monitor", or "my service".
-   2. The question is about errors / failures / faults / exceptions / broken behavior on that service. Pure performance / latency / slowness questions do NOT count.
-   3. The investigation will run against distributed-trace data (`Tracing/Span`, OTEL spans). Pure metric alerts, pure log alerts, pod / container / host alerts, or any non-trace investigation do NOT count.
+    1. The user named a specific service (e.g. `redis-result-cache`, `apiserver`) — not a generic noun like "pods", "containers", "the cluster", "the monitor", or "my service".
+    2. The question is about errors / failures / faults / exceptions / broken behavior on that service. Pure performance / latency / slowness questions do NOT count.
+    3. The investigation will run against distributed-trace data (`Tracing/Span`, OTEL spans). Pure metric alerts, pure log alerts, pod / container / host alerts, or any non-trace investigation do NOT count.
 
-   When all three hold, "errors on X" is genuinely ambiguous in a distributed system — the same logical request creates spans on both the receiver and the caller, so it can mean (A) errors X experienced (server-side spans on X), (B) errors X caused for callers (client-side spans from other services targeting X), or (C) the full-trace view (all spans in traces that touched X and had an error). You MUST stop and ask the user to pick A / B / C before proceeding. Either ask directly (using a structured user-question capability if available, otherwise plain text), or invoke the `outlier-detection-analysis` skill — it owns the same question and will ask it on your behalf. Do NOT silently filter to `service_name = "X"` and start running exploratory queries; that is the failure mode this gate exists to prevent. If the user has already specified the perspective in their question, no clarification needed.
+    When all three hold, "errors on X" is genuinely ambiguous in a distributed system — the same logical request creates spans on both the receiver and the caller, so it can mean (A) errors X experienced (server-side spans on X), (B) errors X caused for callers (client-side spans from other services targeting X), or (C) the full-trace view (all spans in traces that touched X and had an error). You MUST stop and ask the user to pick A / B / C before proceeding. Either ask directly (using a structured user-question capability if available, otherwise plain text), or invoke the `outlier-detection-analysis` skill — it owns the same question and will ask it on your behalf. Do NOT silently filter to `service_name = "X"` and start running exploratory queries; that is the failure mode this gate exists to prevent. If the user has already specified the perspective in their question, no clarification needed.
 
-   When any precondition is missing, this gate does NOT fire — proceed normally.
+    When any precondition is missing, this gate does NOT fire — proceed normally.
 
 ### Phase 2: Impact Assessment
 
@@ -57,21 +57,21 @@ For investigation work that is NOT a phi-correlation problem (recent deploys, de
 
 1. **Scope the Impact**
 
-   - Which services/components are affected?
-   - Are downstream services impacted?
-   - What is the user-facing impact?
+    - Which services/components are affected?
+    - Are downstream services impacted?
+    - What is the user-facing impact?
 
 2. **Quantify the Problem**
 
-   - Query relevant metrics:
-     - Error rates and counts
-     - Latency percentiles (p50, p95, p99)
-     - Request volumes and success rates
-     - Resource utilization (CPU, memory, disk, network)
+    - Query relevant metrics:
+        - Error rates and counts
+        - Latency percentiles (p50, p95, p99)
+        - Request volumes and success rates
+        - Resource utilization (CPU, memory, disk, network)
 
 3. **Check for Cascading Failures**
-   - Look for correlated alerts on dependent services
-   - Check if the issue is propagating upstream or downstream
+    - Look for correlated alerts on dependent services
+    - Check if the issue is propagating upstream or downstream
 
 ### Phase 3: Hypothesis Generation & Testing
 
@@ -134,22 +134,22 @@ For each hypothesis, gather evidence. Present your findings with:
 
 1. **Correlate Timeline Events**
 
-   - Build a timeline of significant events
-   - Identify the trigger point
-   - Trace the chain of causation
+    - Build a timeline of significant events
+    - Identify the trigger point
+    - Trace the chain of causation
 
 2. **Apply the 5 Whys**
 
-   - Start with the symptom
-   - Ask "why" repeatedly to dig deeper
-   - Stop when you reach an actionable root cause
+    - Start with the symptom
+    - Ask "why" repeatedly to dig deeper
+    - Stop when you reach an actionable root cause
 
 3. **Document Findings**
    Present your root cause analysis with:
-   - **Summary**: One-sentence description of the root cause
-   - **Evidence Chain**: The data points that led to this conclusion
-   - **Confidence Level**: High/Medium/Low based on evidence strength
-   - **Alternative Explanations**: Other possibilities that couldn't be fully ruled out
+    - **Summary**: One-sentence description of the root cause
+    - **Evidence Chain**: The data points that led to this conclusion
+    - **Confidence Level**: High/Medium/Low based on evidence strength
+    - **Alternative Explanations**: Other possibilities that couldn't be fully ruled out
 
 ### Phase 5: Remediation Recommendations
 
@@ -157,19 +157,19 @@ For each hypothesis, gather evidence. Present your findings with:
 
 1. **Immediate Actions**
 
-   - What can be done right now to mitigate the issue?
-   - Is a rollback appropriate?
-   - Should we scale resources?
+    - What can be done right now to mitigate the issue?
+    - Is a rollback appropriate?
+    - Should we scale resources?
 
 2. **Short-term Fixes**
 
-   - What patches or configuration changes are needed?
-   - What monitoring gaps should be addressed?
+    - What patches or configuration changes are needed?
+    - What monitoring gaps should be addressed?
 
 3. **Long-term Improvements**
-   - What architectural changes would prevent recurrence?
-   - What automation could help?
-   - What runbooks should be created/updated?
+    - What architectural changes would prevent recurrence?
+    - What automation could help?
+    - What runbooks should be created/updated?
 
 ## Investigation Guidelines
 

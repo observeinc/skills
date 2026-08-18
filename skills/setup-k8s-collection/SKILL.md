@@ -1,14 +1,14 @@
 ---
 name: setup-k8s-collection
 description: >-
-  Deploy the Observe Agent helm chart on Kubernetes to collect logs, metrics,
-  traces, Prometheus metrics, and K8s events. Use this skill whenever the user
-  mentions installing the observe/agent helm chart, configuring helm values
-  for an Observe agent, deploying observability to a K8s cluster, or any
-  K8s-platform-specific Observe setup (Standard, EKS Fargate, GKE Autopilot,
-  EKS Auto Mode) — even if they don't name the helm chart explicitly. Does
-  not create Observe backend resources (datastreams, tokens) — see
-  setup-k8s-backend for that.
+    Deploy the Observe Agent helm chart on Kubernetes to collect logs, metrics,
+    traces, Prometheus metrics, and K8s events. Use this skill whenever the user
+    mentions installing the observe/agent helm chart, configuring helm values
+    for an Observe agent, deploying observability to a K8s cluster, or any
+    K8s-platform-specific Observe setup (Standard, EKS Fargate, GKE Autopilot,
+    EKS Auto Mode) — even if they don't name the helm chart explicitly. Does
+    not create Observe backend resources (datastreams, tokens) — see
+    setup-k8s-backend for that.
 ---
 
 **MANDATORY:** Run `observe skill view setup-k8s-collection --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view setup-k8s-collection --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -106,46 +106,46 @@ Build an `observe-agent-values.yaml` based on user selections. Start from this b
 
 ```yaml
 observe:
-  collectionEndpoint:
-    value: "<COLLECTION_ENDPOINT>"
-  token:
-    create: false # true if user wants helm to create the secret
+    collectionEndpoint:
+        value: "<COLLECTION_ENDPOINT>"
+    token:
+        create: false # true if user wants helm to create the secret
 
 cluster:
-  name: "<CLUSTER_NAME>"
-  events:
-    enabled: true # almost always on
-  metrics:
-    enabled: true # almost always on
+    name: "<CLUSTER_NAME>"
+    events:
+        enabled: true # almost always on
+    metrics:
+        enabled: true # almost always on
 
 node:
-  enabled: true
-  containers:
-    logs:
-      enabled: <LOGS_SELECTED>
-    metrics:
-      enabled: true
-  forwarder:
-    enabled: <TRACES_OR_FORWARDER_NEEDED>
-    traces:
-      enabled: <TRACES_SELECTED>
-    metrics:
-      enabled: true
-      outputFormat: "otel"
+    enabled: true
+    containers:
+        logs:
+            enabled: <LOGS_SELECTED>
+        metrics:
+            enabled: true
+    forwarder:
+        enabled: <TRACES_OR_FORWARDER_NEEDED>
+        traces:
+            enabled: <TRACES_SELECTED>
+        metrics:
+            enabled: true
+            outputFormat: "otel"
 
 application:
-  prometheusScrape:
-    enabled: false # off by default per skill defaults; flip to true if user opts in
-  REDMetrics:
-    enabled: true # baseline default — not a user choice
+    prometheusScrape:
+        enabled: false # off by default per skill defaults; flip to true if user opts in
+    REDMetrics:
+        enabled: true # baseline default — not a user choice
 
 agent:
-  selfMonitor:
-    enabled: true # baseline default — not a user choice
-  config:
-    global:
-      fleet:
-        enabled: true # baseline default — populates the "Observe Agent/Events" datastream with 10m heartbeats
+    selfMonitor:
+        enabled: true # baseline default — not a user choice
+    config:
+        global:
+            fleet:
+                enabled: true # baseline default — populates the "Observe Agent/Events" datastream with 10m heartbeats
 ```
 
 > **About the "baseline default" lines (`REDMetrics`, `selfMonitor`, `fleet`).** Keep all three on. Without them the equivalent debugging and self-attribution signals are unavailable, and a user can't tell at runtime whether they were ever enabled. These are not user-tunable settings — same posture as the host agent's `--self_monitoring::enabled`, `--self_monitoring::fleet::enabled`, `--application::RED_metrics::enabled` flags. Disable only if a specific docs page tells the user to.
@@ -223,9 +223,9 @@ The agent exposes (in-cluster) OTLP at:
 
 - **Do not modify the application or its build/deploy pipeline yourself.** If a change is required, hand off to the appropriate skill so the user gets a complete, tested workflow rather than partial advice.
 - Ask the user whether they want to instrument an application now, set it up later, or just confirm what they already have:
-  - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
-  - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
-  - If they're not ready to instrument anything yet — exit; the cluster-side setup is complete and the OTLP endpoints will be ready whenever they are.
+    - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
+    - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
+    - If they're not ready to instrument anything yet — exit; the cluster-side setup is complete and the OTLP endpoints will be ready whenever they are.
 
 | Skill                                | Description                                                                                                               |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
@@ -246,8 +246,8 @@ If the user provided a value for `deployment.environment.name` in `deploy-k8s-ex
 
 ```yaml
 cluster:
-  deploymentEnvironment:
-    name: "<DEPLOYMENT_ENVIRONMENT_NAME>"
+    deploymentEnvironment:
+        name: "<DEPLOYMENT_ENVIRONMENT_NAME>"
 ```
 
 The chart populates `deployment.environment.name` as a resource attribute on every outgoing record. Without this key, records ship with no `deployment.environment.name`, which breaks APM R.E.D metrics, performance breakdown, and usage attribution by environment — all things `deploy-k8s-explorer` Step 1d warned the user about.

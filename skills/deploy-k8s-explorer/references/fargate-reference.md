@@ -55,62 +55,62 @@ Wait for operator pod: `kubectl get pods -n observe`
 
 ```yaml
 observe:
-  collectionEndpoint:
-    value: "<COLLECTION_ENDPOINT>"
-  token:
-    create: false
+    collectionEndpoint:
+        value: "<COLLECTION_ENDPOINT>"
+    token:
+        create: false
 
 cluster:
-  name: "<CLUSTER_NAME>"
-  events:
-    enabled: true
-  metrics:
-    enabled: true
+    name: "<CLUSTER_NAME>"
+    events:
+        enabled: true
+    metrics:
+        enabled: true
 
 node:
-  enabled: false
-  forwarder:
-    enabled: true
+    enabled: false
+    forwarder:
+        enabled: true
 
 forwarder:
-  mode: deployment
-  replicaCount: 2
+    mode: deployment
+    replicaCount: 2
 
 nodeless:
-  enabled: true
-  hostingPlatform: fargate
-  metrics:
     enabled: true
-  logs:
-    enabled: true
-    containerNameFromFile: false
-    retryOnFailure:
-      enabled: true
-      initialInterval: 1s
-      maxInterval: 30s
-      maxElapsedTime: 5m
-    include: '["/applogs/**/*.log", "/applogs/**/*.log.*"]'
-    exclude: '["**/*.gz", "**/*.tmp"]'
-    lookbackPeriod: 24h
-    startAt: end
-    autoMultilineDetection: false
-  serviceAccounts:
-    # Map of namespace -> list of service accounts
-    # Example:
-    # default: ["my-app-sa"]
-    # production: ["prod-app-sa", "worker-sa"]
+    hostingPlatform: fargate
+    metrics:
+        enabled: true
+    logs:
+        enabled: true
+        containerNameFromFile: false
+        retryOnFailure:
+            enabled: true
+            initialInterval: 1s
+            maxInterval: 30s
+            maxElapsedTime: 5m
+        include: '["/applogs/**/*.log", "/applogs/**/*.log.*"]'
+        exclude: '["**/*.gz", "**/*.tmp"]'
+        lookbackPeriod: 24h
+        startAt: end
+        autoMultilineDetection: false
+    serviceAccounts:
+        # Map of namespace -> list of service accounts
+        # Example:
+        # default: ["my-app-sa"]
+        # production: ["prod-app-sa", "worker-sa"]
 
 application:
-  prometheusScrape:
-    enabled: false
+    prometheusScrape:
+        enabled: false
 
 agent:
-  selfMonitor:
-    enabled: true # always on per skill defaults
-  config:
-    global:
-      fleet:
-        enabled: true # populates the "Observe Agent/Events" datastream with 10m heartbeats
+    selfMonitor:
+        enabled: true # always on per skill defaults
+    config:
+        global:
+            fleet:
+                enabled: true # populates the "Observe Agent/Events" datastream with 10m heartbeats
 ```
 
 ## Post-Install: Annotate Pods
@@ -139,18 +139,18 @@ For Fargate log collection, each monitored pod needs:
 
 ```yaml
 volumes:
-  - name: log-storage
-    emptyDir:
-      sizeLimit: 50Mi
+    - name: log-storage
+      emptyDir:
+          sizeLimit: 50Mi
 ```
 
 ### Volume mount in container spec
 
 ```yaml
 volumeMounts:
-  - name: log-storage
-    mountPath: /applogs
-    readOnly: false
+    - name: log-storage
+      mountPath: /applogs
+      readOnly: false
 ```
 
 ### Application must write to /applogs
@@ -171,27 +171,27 @@ If you don't populate `nodeless.serviceAccounts`, manually create RBAC:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: otel-sidecar-role
+    name: otel-sidecar-role
 rules:
-  - apiGroups: [""]
-    resources: [nodes, nodes/proxy, namespaces, pods]
-    verbs: [get, list, watch]
-  - apiGroups: ["apps"]
-    resources: [replicasets]
-    verbs: [get, list, watch]
+    - apiGroups: [""]
+      resources: [nodes, nodes/proxy, namespaces, pods]
+      verbs: [get, list, watch]
+    - apiGroups: ["apps"]
+      resources: [replicasets]
+      verbs: [get, list, watch]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: otel-sidecar-role-binding
+    name: otel-sidecar-role-binding
 subjects:
-  - kind: ServiceAccount
-    name: <SERVICE_ACCOUNT>
-    namespace: <NAMESPACE>
+    - kind: ServiceAccount
+      name: <SERVICE_ACCOUNT>
+      namespace: <NAMESPACE>
 roleRef:
-  kind: ClusterRole
-  name: otel-sidecar-role
-  apiGroup: rbac.authorization.k8s.io
+    kind: ClusterRole
+    name: otel-sidecar-role
+    apiGroup: rbac.authorization.k8s.io
 ```
 
 Apply: `kubectl apply -f cluster-role.yaml`

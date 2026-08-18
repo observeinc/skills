@@ -169,18 +169,18 @@ For each library, pick the first matching case:
 1. **`OpenTelemetry.Instrumentation.<Library>` exists**
    Install it and call the matching registration method.
 
-   ```csharp
-   .AddSqlClientInstrumentation()
-   .AddGrpcClientInstrumentation()
-   ```
+    ```csharp
+    .AddSqlClientInstrumentation()
+    .AddGrpcClientInstrumentation()
+    ```
 
 2. **The library emits a native `ActivitySource` or `Meter`**
    Subscribe to it directly.
 
-   ```csharp
-   .AddSource("Npgsql")
-   .AddMeter("Some.Library")
-   ```
+    ```csharp
+    .AddSource("Npgsql")
+    .AddMeter("Some.Library")
+    ```
 
 3. **The library needs an SDK-specific opt-in**
    Enable that opt-in where the client is constructed, then subscribe to the source it emits.

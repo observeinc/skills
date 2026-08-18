@@ -52,8 +52,8 @@ label: "Mask sensitive data (passwords, credit cards, SSNs, etc.)"
 tier: primary
 docs_anchor: "#mask-sensitive-data"
 followups:
-  - id: patterns
-    prompt: "Which sensitive-data patterns should the agent redact from logs? Multi-select from: passwords, credit cards, SSNs, bearer tokens, emails, phone numbers, IPv4 addresses, names."
+    - id: patterns
+      prompt: "Which sensitive-data patterns should the agent redact from logs? Multi-select from: passwords, credit cards, SSNs, bearer tokens, emails, phone numbers, IPv4 addresses, names."
 ```
 
 ### option: multiline
@@ -64,17 +64,17 @@ label: "Handle multiline log records (Java/Python stack traces, etc.)"
 tier: primary
 prompt: "How should the agent handle multiline log records?"
 choices:
-  auto:
-    label: "Automatic (handles common timestamp-prefixed formats)"
-    docs_anchor: "#automatic-detection"
-    excludes: [multiline.custom]
-  custom:
-    label: "Custom regex (for non-standard log formats)"
-    docs_anchor: "#custom-pattern-with-the-recombine-operator"
-    excludes: [multiline.auto]
-    followups:
-      - id: regex
-        prompt: "Provide an is_first_entry regex — a pattern that matches only the FIRST line of each log record (e.g. ^\\d{4}-\\d{2}-\\d{2} for ISO-8601 timestamps). Lines that don't match are treated as continuations of the previous record."
+    auto:
+        label: "Automatic (handles common timestamp-prefixed formats)"
+        docs_anchor: "#automatic-detection"
+        excludes: [multiline.custom]
+    custom:
+        label: "Custom regex (for non-standard log formats)"
+        docs_anchor: "#custom-pattern-with-the-recombine-operator"
+        excludes: [multiline.auto]
+        followups:
+            - id: regex
+              prompt: "Provide an is_first_entry regex — a pattern that matches only the FIRST line of each log record (e.g. ^\\d{4}-\\d{2}-\\d{2} for ISO-8601 timestamps). Lines that don't match are treated as continuations of the previous record."
 ```
 
 ### option: ec2_tags
@@ -87,8 +87,8 @@ docs_anchor: "#fetch-ec2-instance-tags"
 uses_processors: [resourcedetection]
 prompt: "EC2 tag retrieval requires the host's IAM role to include `ec2:DescribeTags`. Has that permission been granted? (If not, the agent still runs — the resourcedetection processor will log permission-denied errors and skip tag retrieval.)"
 followups:
-  - id: scope
-    prompt: "Which EC2 tag keys should be included as resource attributes? Either `all`, or a comma-separated list of specific key names."
+    - id: scope
+      prompt: "Which EC2 tag keys should be included as resource attributes? Either `all`, or a comma-separated list of specific key names."
 ```
 
 ### option: tail_log
@@ -99,11 +99,11 @@ label: "Tail a custom log file (paths outside /var/log)"
 tier: primary
 docs_anchor: "#tail-a-log-file"
 followups:
-  - id: paths
-    prompt: "Which file paths should the agent tail? List as glob patterns, one per line (e.g. /var/log/myapp/*.log, /opt/myapp/logs/*.log)."
-  - id: attributes
-    optional: true
-    prompt: "Should logs from these files carry any per-source resource attributes (e.g. service.name=myapp, log_source=app)? Comma-separated key=value list, or `none`."
+    - id: paths
+      prompt: "Which file paths should the agent tail? List as glob patterns, one per line (e.g. /var/log/myapp/*.log, /opt/myapp/logs/*.log)."
+    - id: attributes
+      optional: true
+      prompt: "Should logs from these files carry any per-source resource attributes (e.g. service.name=myapp, log_source=app)? Comma-separated key=value list, or `none`."
 ```
 
 ---

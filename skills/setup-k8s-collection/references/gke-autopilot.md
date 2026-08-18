@@ -15,134 +15,134 @@ Toggle `<PLACEHOLDER>` values based on user selections (same selections as Stand
 
 ```yaml
 observe:
-  collectionEndpoint:
-    value: "<COLLECTION_ENDPOINT>"
-  token:
-    create: false
+    collectionEndpoint:
+        value: "<COLLECTION_ENDPOINT>"
+    token:
+        create: false
 
 cluster:
-  name: "<CLUSTER_NAME>"
-  events:
-    enabled: true
-  metrics:
-    enabled: true
+    name: "<CLUSTER_NAME>"
+    events:
+        enabled: true
+    metrics:
+        enabled: true
 
 node:
-  enabled: true
-  metrics:
-    enabled: false
-  containers:
-    logs:
-      enabled: <LOGS_SELECTED>
-  forwarder:
     enabled: true
-    mode: deployment
-    replicaCount: 2
     metrics:
-      outputFormat: prometheus
+        enabled: false
+    containers:
+        logs:
+            enabled: <LOGS_SELECTED>
+    forwarder:
+        enabled: true
+        mode: deployment
+        replicaCount: 2
+        metrics:
+            outputFormat: prometheus
 
 application:
-  prometheusScrape:
-    enabled: false # off by default per skill defaults; flip to true if user opts in
-  REDMetrics:
-    enabled: true # always on per skill defaults; harmless if traces are off
+    prometheusScrape:
+        enabled: false # off by default per skill defaults; flip to true if user opts in
+    REDMetrics:
+        enabled: true # always on per skill defaults; harmless if traces are off
 
 # Override affinity for ALL components to remove observeinc.com/unschedulable
 cluster-events:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 cluster-metrics:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 prometheus-scraper:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 node-logs-metrics:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
-  extraVolumes:
-    - name: "observe-agent-deployment-config"
-      configMap:
-        name: "observe-agent"
-        items:
-          - key: "relay"
-            path: "observe-agent.yaml"
-        defaultMode: 420
-    - name: varlogpods
-      hostPath:
-        path: /var/log/pods
-  extraVolumeMounts:
-    - name: observe-agent-deployment-config
-      mountPath: /observe-agent-conf
-    - name: varlogpods
-      mountPath: /var/log/pods
-      readOnly: true
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
+    extraVolumes:
+        - name: "observe-agent-deployment-config"
+          configMap:
+              name: "observe-agent"
+              items:
+                  - key: "relay"
+                    path: "observe-agent.yaml"
+              defaultMode: 420
+        - name: varlogpods
+          hostPath:
+              path: /var/log/pods
+    extraVolumeMounts:
+        - name: observe-agent-deployment-config
+          mountPath: /observe-agent-conf
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
 
 monitor:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 forwarder:
-  mode: deployment
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    mode: deployment
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 gateway:
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/os
-                operator: NotIn
-                values: [windows]
+    affinity:
+        nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                    - matchExpressions:
+                          - key: kubernetes.io/os
+                            operator: NotIn
+                            values: [windows]
 
 agent:
-  selfMonitor:
-    enabled: true # always on per skill defaults
-  config:
-    global:
-      fleet:
-        enabled: true # populates the "Observe Agent/Events" datastream with 10m heartbeats
+    selfMonitor:
+        enabled: true # always on per skill defaults
+    config:
+        global:
+            fleet:
+                enabled: true # populates the "Observe Agent/Events" datastream with 10m heartbeats
 ```
 
 ## Install commands

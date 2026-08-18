@@ -63,9 +63,9 @@ Requires time-series rows with a label column distinguishing each period.
 How to shape the OPAL:
 
 - After producing a time-series with `align` + `aggregate` or `timechart`, add `timewrap`:
-  ```
-  timewrap 1d, 4, "period"
-  ```
+    ```
+    timewrap 1d, 4, "period"
+    ```
 - This replicates the data N times, shifting each copy, and adds a `"period"` label column with values like `"now"`, `"1d ago"`, `"2d ago"`, etc.
 - Use `lineChart` with the period label as the series dimension
 

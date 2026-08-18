@@ -276,25 +276,25 @@ Same as validation Step 3. Many "missing data" issues are simply "no traffic was
 Run scoped checks across both raw and derived signals:
 
 1. **Service visibility and dataset population**
-   - [service-list.md](references/service-list.md)
-   - [search-spans.md](references/search-spans.md)
+    - [service-list.md](references/service-list.md)
+    - [search-spans.md](references/search-spans.md)
 2. **Spans and span events**
-   - [endpoint-spans.md](references/endpoint-spans.md)
-   - [search-spans.md](references/search-spans.md)
-   - [search-span-events.md](references/search-span-events.md)
+    - [endpoint-spans.md](references/endpoint-spans.md)
+    - [search-spans.md](references/search-spans.md)
+    - [search-span-events.md](references/search-span-events.md)
 3. **Shared metric families**
-   - [red-metrics.md](references/red-metrics.md)
-   - [runtime-metrics.md](references/runtime-metrics.md)
-   - [infrastructure-metrics.md](references/infrastructure-metrics.md)
-   - [deployment-tracking.md](references/deployment-tracking.md)
-   - [performance-breakdown.md](references/performance-breakdown.md)
+    - [red-metrics.md](references/red-metrics.md)
+    - [runtime-metrics.md](references/runtime-metrics.md)
+    - [infrastructure-metrics.md](references/infrastructure-metrics.md)
+    - [deployment-tracking.md](references/deployment-tracking.md)
+    - [performance-breakdown.md](references/performance-breakdown.md)
 4. **Service inventory and instrumentation context**
-   - [instrumentations-list.md](references/instrumentations-list.md)
-   - [service-instances.md](references/service-instances.md)
+    - [instrumentations-list.md](references/instrumentations-list.md)
+    - [service-instances.md](references/service-instances.md)
 5. **Database service detection**
-   - [database-service-detection.md](references/database-service-detection.md) when database dependencies are expected
+    - [database-service-detection.md](references/database-service-detection.md) when database dependencies are expected
 6. **Instrumentation audit**
-   - [instrumentation-audit.md](references/instrumentation-audit.md) when telemetry exists but its shape or quality looks wrong
+    - [instrumentation-audit.md](references/instrumentation-audit.md) when telemetry exists but its shape or quality looks wrong
 
 ### Step 6: Build Failure Report
 
