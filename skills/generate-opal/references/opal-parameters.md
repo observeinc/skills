@@ -30,8 +30,8 @@ Chain one filter line per axis, before aggregation:
 
 ```
 filter array_contains($cluster, #k8s.cluster.name) or is_null($cluster)
-| filter array_contains($customer, #customer.id) or is_null($customer)
-| timechart 1m, qps:rate(count())
+filter array_contains($customer, #customer.id) or is_null($customer)
+timechart 1m, qps:rate(count())
 ```
 
 ## Common mistakes
