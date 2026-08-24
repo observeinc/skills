@@ -42,7 +42,16 @@ codex mcp add observe --url https://<your-base-url>/v1/ai/mcp
 The server is stored in your global `~/.codex/config.toml`; remove it later with `codex mcp remove observe`.
 
 ### Other agents
+If you have the [Observe CLI](https://github.com/observeinc/cli) installed (preferred):
+```bash
+# Install all skills without prompts
+observe skill install --all
 
+# Install specific skills
+observe skill install <skill-name-1> <skill-name-2>
+```
+
+Otherwise with [node.js](https://nodejs.org/) installed:
 ```bash
 # Install all skills without prompts
 npx skills add observeinc/skills --all
