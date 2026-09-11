@@ -4,6 +4,7 @@
 
 ### Constructor functions
 
+- `duration(N)` — **nanoseconds** (e.g., `duration(0)` → 0ns, `duration(123000)` → 123μs). Lowest-level constructor; useful for `fill col:duration(0)` on duration columns.
 - `duration_hr(N)` — hours (e.g., `duration_hr(24)` → 24h)
 - `duration_min(N)` — minutes (e.g., `duration_min(15)` → 15m)
 - `duration_sec(N)` — seconds (e.g., `duration_sec(30)` → 30s)
@@ -146,3 +147,4 @@ Format tokens use **Snowflake conventions** (NOT strftime): `YYYY`, `MM`, `DD`, 
 - Comparing duration to number → compare durations: `elapsed > duration_sec(5)` not `elapsed > 5`
 - Forgetting `string()` in parse_isotime → `parse_isotime(string(col))`
 - Passing a duration into a constructor → `duration_hr(now() - ts)` is wrong; use `to_hours(now() - ts)` to extract
+- Filling a duration column with a numeric constant → `fill latency:0` and `fill latency:float64_null()` are type errors on a duration column. Use `fill latency:duration(0)` for zero (canonical, matches the template compiler) or `fill latency:duration_null()` for null.

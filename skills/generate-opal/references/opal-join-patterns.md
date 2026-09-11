@@ -172,6 +172,22 @@ Or with subquery labels:
 
 Columns that don't exist on one side are null. Use `any_not_null()` after union to collapse sparse columns.
 
+## Joining local named subqueries
+
+When two branches start from the same input but need different shaping, define both as named subqueries and select the left side in a final result block. Named subquery declarations and references both require `@`.
+
+    @messages <- @ {
+      statsby messages:array_agg(message), group_by(conversation_id)
+    }
+    @conversations <- @ {
+      statsby span_count:count(), group_by(conversation_id)
+    }
+    <- @conversations {
+      leftjoin on(conversation_id = @messages.conversation_id), messages:@messages.messages
+    }
+
+If a named subquery contains an earlier syntax or type error, later references to it may also report `query references an unknown dataset`. Fix errors inside the declaration first; the unknown-dataset diagnostics may be cascading failures rather than a separate binding problem.
+
 ---
 
 ## Cross-Dataset Correlation
@@ -256,6 +272,8 @@ The only exception is joining two non-temporal results (e.g., two subquery outpu
 
 ## Common pitfalls
 
+- **Dropping `@` from a subquery declaration** — Write `@messages <- @ { ... }`, not `messages <- @ { ... }`. Every later `@messages` reference must match a declaration carrying the same sigil.
+- **Treating a cascading unknown-dataset error as the root cause** — If the referenced local subquery has an earlier parse or type error, repair that declaration before changing the join or adding another external input.
 - **Using `on(...)` with `exists`/`not_exists`/`follow`/`follow_not`** — These verbs take bare boolean predicates, NOT `on(...)`. Use `on(...)` only with `join`/`leftjoin`/`fulljoin`/`lookup`.
 - **Using `join` when `exists` suffices** — Use `exists`/`not_exists` if you only need to filter.
 - **Using `lookup` for Event↔Event** — Use `join`/`leftjoin`; `lookup` is for Resource/Table.

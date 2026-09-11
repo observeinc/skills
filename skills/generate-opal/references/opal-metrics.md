@@ -281,6 +281,22 @@ WHY double-combine: align combines digests/buckets within each time bucket; aggr
 
 CRITICAL: Using `m()` on a metric whose `type` is `"tdigest"`, `"histogram"`, or `"exponentialHistogram"` causes a fatal validation error. Always check the metric's `type` and use the corresponding `m_*` function.
 
+### Do NOT fill the combined histogram column
+
+Distribution columns (`tdigest`, `histogram`, `exponentialHistogram`) have no meaningful zero or identity. `fill combined:0` is a type error, while `fill combined:tdigest_null()` (or `histogram_null()` / `exponential_histogram_null()`) only preserves NULLs without making percentile output usable. Follow two rules:
+
+1. With `align options(bins: 1)`, the query requests a single summary bin per series. Do not fill the combined distribution column; omit `fill` and let missing distributions remain NULL.
+2. For time-series distribution queries (`align <interval>`), extract scalar percentiles in `make_col` first, then fill the scalar columns:
+
+```opal
+align 5m, combined:histogram_combine(m_tdigest("apm_service_duration"))
+aggregate combined:histogram_combine(combined), group_by(svc:string(tags."service.name"))
+make_col p50:histogram_quantile(combined, 0.50), p99:histogram_quantile(combined, 0.99)
+fill p50:float64_null(), p99:float64_null()
+```
+
+Never write `fill combined:0` or `fill combined:tdigest_null()` — fill the extracted scalars instead.
+
 ### Combining multiple metrics (e.g., error rate)
 
 ```opal
@@ -497,11 +513,17 @@ Rules for `frame(ahead: ...)`:
 
 `fill` values must be compile-time constants (`0`, `float64_null()`, `"string"`, etc.). The verb replaces NULLs in empty time buckets with the specified constant.
 
-| Strategy       | Syntax                    | Use for                                                                           |
-| :------------- | :------------------------ | :-------------------------------------------------------------------------------- |
-| Zero           | `fill col:0`              | Counters, counts, sums — absence means zero                                       |
-| Typed null     | `fill col:float64_null()` | Averages, gauges — absence means no data (use `int64_null()` for integer columns) |
-| Specific value | `fill col:42`             | Custom default                                                                    |
+**Match the constant to the column type.** A bare `0` is an int — using `fill latency_ms:0` on a `duration` column is a type error. Pick a constructor or typed-null that matches the column type.
+
+| Strategy           | Syntax                                                                   | Use for                                                                           |
+| :----------------- | :----------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| Zero (numeric)     | `fill col:0`                                                             | Counters, counts, sums on int/float columns — absence means zero                  |
+| Zero (duration)    | `fill col:duration(0)` (also `duration_sec(0)`, `duration_ms(0)`)        | Latency/elapsed-time columns where absence means zero duration                    |
+| Typed null         | `fill col:float64_null()`                                                | Averages, gauges — absence means no data (use `int64_null()` for integer columns) |
+| Typed null (other) | `duration_null()`, `tdigest_null()`, `histogram_null()`, `string_null()` | Duration, distribution, and string columns where absence should remain NULL       |
+| Specific value     | `fill col:42`                                                            | Custom default                                                                    |
+
+For duration columns the constant must itself be a duration — bare numbers, `float64_null()`, or `int64_null()` will all fail to compile. `duration(N)` takes nanoseconds (so `duration(0)` is the canonical zero); use `duration_sec(N)` / `duration_ms(N)` / `duration_hr(N)` when you want unit-explicit non-zero values. See [opal-duration](opal-duration.md) for the full set of constructors.
 
 For gauges where absence means "unchanged", use `last_not_null()` in `align` to carry forward the last observation, then `fill` with `0` or a typed null for any remaining gaps:
 

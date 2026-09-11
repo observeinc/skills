@@ -24,12 +24,13 @@ This skill provides core OPAL guidance for generating valid Observe OPAL pipelin
 **MANDATORY: You MUST load references before writing OPAL.** Check this routing table and read every reference file that applies (e.g., `cat /skills/generate-opal/references/opal-logs.md`). If multiple references are listed, read ALL of them — do not skip any. Do NOT write any OPAL pipeline until all matching references are loaded.
 
 OPAL join/lookup/set-operation syntax is non-standard — do NOT rely on SQL knowledge. If the answer requires data from more than one dataset, you MUST read [opal-join-patterns](references/opal-join-patterns.md) before writing any OPAL.
+If the query builds objects or arrays (`make_object`, `make_array`, `array_agg` of objects, flatten), you MUST read [opal-transforms](references/opal-transforms.md) before writing any OPAL.
 
 - [opal-logs](references/opal-logs.md) — Event/log. Log body filtering, severity levels, structured log parsing, JSON extraction.
 - [opal-metrics](references/opal-metrics.md) — Event/metric. align, aggregate, error rates, throughput, RED metrics, tdigest, histogram, counters, gauges, Prometheus, fill patterns, rolling windows.
 - [opal-spans](references/opal-spans.md) — Interval/otel_span. Latency percentiles, per-span error classification, tracing workflows, dependency tracking.
 - [opal-join-patterns](references/opal-join-patterns.md) — Combining datasets via leftjoin, fulljoin, exists, not_exists, follow, surrounding, union, lookup, lookup_ip_info, update_resource, semi/anti-joins, temporal joins.
-- [opal-transforms](references/opal-transforms.md) — Parsing nested JSON, flatten_leaves, extract_regex, pivot/unpivot, rename_col, drop_col, window functions, array/object manipulation.
+- [opal-transforms](references/opal-transforms.md) — Nested JSON, flatten_leaves, extract_regex, pivot/unpivot, rename_col, drop_col, window functions, `make_object` / `make_array` / `array_agg` of objects. Load whenever the query constructs objects or arrays.
 - [opal-aggregation](references/opal-aggregation.md) — Choosing statsby vs timestats vs timechart vs aggregate, histogram, make_session, entity targeting, entity-vs-event counts, rolling windows, cardinality.
 - [opal-resource-datasets](references/opal-resource-datasets.md) — Resource-kind datasets (pods, nodes, deployments). Duration calculation, state filtering, complementary condition datasets.
 - [opal-duration](references/opal-duration.md) — Duration thresholds, staleness/age calculations, elapsed time, timestamp formatting/parsing.
@@ -77,6 +78,7 @@ Results are consumed by an LLM with limited context. Always use pick_col to retu
     - **`statsby` is non-temporal** — it consumes the input's `valid_from`/`valid_to` and produces a Table. Do NOT add `valid_from:row_start_time()` or `valid_to:row_end_time()` to a `pick_col` that follows `statsby`; those columns no longer exist and the query will fail with `the field "<name>" does not exist among fields [...]`. After `statsby`, `pick_col` may include only the group-by and aggregate output columns.
     - **After `align`/`aggregate`** (the metric verb), temporal columns DO persist — if you add `pick_col` after aggregation you MUST include them with aliases (e.g. `valid_from:row_start_time()`, `valid_to:row_end_time()`). If you omit `pick_col` entirely, temporal columns are retained automatically.
 
+        WRONG: pick_col row_start_time(), span_name, dur_ms, status_message, trace_id
         WRONG: pick_col span_name, dur_ms, status_message, trace_id
         CORRECT: pick_col valid_from:row_start_time(), valid_to:row_end_time(), span_name, dur_ms, status_message, trace_id
 
@@ -122,7 +124,25 @@ Fields like `body` or `attributes` may be VARIANT/OBJECT types. Wrap with `strin
     make_col dur_ms:float64(duration)/1000000
     make_col is_error:if(error = true, 1, 0)
 
-Do NOT split function arguments across lines. For subqueries, use `@label <- @ { }` block syntax with each verb on its own line.
+Do NOT split function arguments across lines.
+
+### Named subqueries — keep the `@` sigil
+
+Named subquery declarations and references both require the `@` sigil. A declaration such as `messages <- @ { ... }` is invalid; write `@messages <- @ { ... }`.
+
+When combining local subqueries, define each branch before referencing it. An explicit final result block makes the data flow clearest:
+
+    @messages <- @ {
+      statsby messages:array_agg(message), group_by(conversation_id)
+    }
+    @conversations <- @ {
+      statsby span_count:count(), group_by(conversation_id)
+    }
+    <- @conversations {
+      leftjoin on(conversation_id = @messages.conversation_id), messages:@messages.messages
+    }
+
+Keep each verb on its own line inside subquery blocks.
 
 ### make_col forward-reference
 
@@ -219,6 +239,14 @@ For detailed syntax and examples, load [opal-resource-datasets](references/opal-
 
 `aggregate` without `group_by()` produces a time series. For a single scalar row: `aggregate total:sum(x), group_by()`
 
+### statsby: single value needs an EMPTY group_by()
+
+`statsby` WITHOUT a `group_by` clause it defaults to grouping by the input's primary key → one row PER ENTITY, not a single value. For a singleStat / single scalar, pass an explicit EMPTY `group_by()` to collapse the whole input to one row:
+
+    statsby total:count()                    ← one row PER ENTITY (default primary-key grouping), NOT a single value
+    statsby total:count(), group_by()        ← single scalar row (singleStat)
+    statsby total:count(), group_by(svc)     ← one row per service
+
 ### NEVER include temporal columns in group_by()
 
 Temporal columns (`validFromField`/`validToField`) must NEVER appear in any `group_by()`.
@@ -250,6 +278,20 @@ On Resource inputs, only argumentless `dedup` is allowed.
 
     filter x = "a" or x = "b" or x = "c"
 
+### Filter null semantics — `=` and `!=` drop NULL rows
+
+Comparisons against NULL return NULL, which `filter` treats as false. Both `filter c = "x"` and `filter c != "x"` exclude rows where `c` is null.
+
+To **keep** null rows with `!=`, OR in an explicit null check (this is the form the UI template emits):
+
+    filter is_null(c) or c != "x"        ← keeps rows where c is null
+
+To **exclude** null rows explicitly, add `not is_null(c)` — useful after `leftjoin` or `aggregate` where the column may be sparse:
+
+    filter not is_null(customer_name) and customer_name != "internal"
+
+Negated function predicates (`not contains`, `not match_regex`, `not starts_with`) also drop NULLs. Do not invent an `is_null` OR for those unless the user explicitly asked to keep missing values.
+
 ### String matching — function syntax, no infix operators
 
 - **Substring match** — `contains(col, "text")`
@@ -257,7 +299,7 @@ On Resource inputs, only argumentless `dedup` is allowed.
 - **Regex match** — `match_regex(col, regex("pattern"))`
 - **Multi-term search** — `search(col, "term")`
 
-All OPAL regex uses **POSIX ERE** (NOT PCRE). No `\d`, `\w`, `\s` — use `[0-9]`, `[a-zA-Z0-9_]`, `[[:space:]]`. Non-greedy quantifiers (`*?`, `+?`) are NOT supported. For full regex reference, load [opal-regex](references/opal-regex.md).
+All OPAL regex is **POSIX ERE plus the Perl backslash shorthands** (NOT full PCRE). `\d`, `\w`, `\s`, `\b` and non-greedy quantifiers (`*?`, `+?`) all work; POSIX classes like `[[:space:]]` work too. What does not exist: lookahead `(?=`, lookbehind `(?<=`, backreferences `\1`. Also NEVER use inline flag groups `(?i)`/`(?m)`/`(?s)` or non-capturing groups `(?:...)` — RE2 accepts them so they compile, but Snowflake's `REGEXP_LIKE`/`RLIKE` rejects them at execution (`no argument for repetition operator: ?`), which crashes `match_regex`/`~` on substring-indexed columns; use a slash-suffix/flag argument for case-insensitivity and a plain group `(...)` instead of `(?:...)`. Never use `[[:<:]]`/`[[:>:]]` for word boundaries — that is MySQL syntax and Snowflake rejects it; use `\b`. For full regex reference, load [opal-regex](references/opal-regex.md).
 
 ---
 
@@ -290,6 +332,7 @@ These are the most common OPAL generation mistakes. Verify NONE of them apply be
 4. **Filtering on valid-to to get current state.** NEVER write `filter is_null(row_end_time())` or `filter is_null(@."Valid To")` — it almost always returns zero rows on Resource datasets. For "currently in state X", use `filter_last <state predicate>` (last-value semantics), not plain `filter`, and compute durations with `coalesce(row_end_time(), now())`. See [opal-resource-datasets](references/opal-resource-datasets.md).
 5. **`visualizationTemplate.lineChart.x` mismatch.** This field references the OUTPUT column name in the schema, NOT the OPAL function. `timechart` produces `_c_valid_from`; `align` (with or without `aggregate`) produces `valid_from`. Mixing them up fails with `references column 'X' which does not exist in the schema. Available fields: ...`. NEVER use `row_start_time()` here.
 6. **`group_by(name:string(name))` overwrite.** Casting a bare column to itself collides with the existing column. FAILS with `attempting to overwrite existing column "<name>"`. Either rename (`fn:string(functionName)`) or drop the cast when the column is already a string (`group_by(functionName, region)`).
+7. **Blindly `make_event`-ing a Resource dataset.** Do NOT add `make_event` (or any `make_*` conversion) as a routine or first step on a Resource. Query the Resource directly — `filter`, `filter_last`/`ever`/`always`/`never`, `make_col`, `statsby`, `timechart`, and `topk` all operate on Resources natively (none of the worked examples convert first). A blind `make_event` explodes each entity's state history into per-update rows, which double-counts entities and breaks current-state and duration logic. Convert only when the question is specifically about state _transitions_ (one row per change), or a downstream verb strictly requires a different kind. See [opal-resource-datasets](references/opal-resource-datasets.md).
 
 ---
 

@@ -24,7 +24,7 @@ Required filters:
 
 Expected metric families by language:
 
-- `Java`: `jvm.memory.used`, `jvm.memory.limit`, `jvm.memory.committed`
+- `Java`: `jvm.memory.used`, `jvm.memory.limit`, `jvm.memory.committed`, `jvm.cpu.recent_utilization`
 - `Node.js`: `v8js.gc.duration`, `v8js.memory.heap.used`, `v8js.memory.heap.limit`, `nodejs.eventloop.delay.p99`
 - `Python`: `process.runtime.cpython.gc_count`, `process.runtime.cpython.thread_count`
 - `.NET`:

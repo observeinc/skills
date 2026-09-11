@@ -83,7 +83,7 @@ Output: one row per leaf. `_path` is the dot-separated key path, `_value` is var
 
 - `drop_fields(obj, "field1", "field2")` — remove fields
 - `make_fields(obj, "key", value, ...)` — add fields
-- `make_object("key1", val1, "key2", val2)` — create from scratch
+- `make_object("key1":val1, "key2":val2)` — create from named `key:value` bindings. Comma-separated key and value arguments such as `make_object("key1", val1)` are invalid.
 - `merge_objects(obj1, obj2)` — combine (later wins on conflict)
 - `object_keys(obj)` — array of top-level key names
 - `pick_fields(obj, "field1", "field2")` — keep only named fields

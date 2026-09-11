@@ -25,17 +25,17 @@ Commands:
 
 Relevant fields:
 
-- `database` (Bool) — `true` when Observe identifies the service as a database
 - `service_type` — `"Database"` for database services
 - `service_name` — matches the database peer name from edge metrics (e.g. `postgresql`, `mysql`)
+- `language` — `"database"` for database services
 
 Example query:
 
 ```bash
 observe query --input <tracing-service-id> --interval 4h --limit 20 --json --pipeline '
 filter environment = "<environment>"
-filter database = true
-pick_col @."Valid From", @."Valid To", service_name, environment, service_namespace, service_type, database
+filter service_type = "Database"
+pick_col @."Valid From", @."Valid To", service_name, environment, service_namespace, service_type
 sort desc(@."Valid From")'
 ```
 
