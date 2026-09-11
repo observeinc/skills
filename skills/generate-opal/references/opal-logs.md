@@ -129,7 +129,9 @@ Combine signals when appropriate — for example, use severity as the primary fi
 
 ### Wide-net error filtering
 
-Combine multiple signals to catch errors regardless of log structure. Keyword matching alone misses HTTP error status codes (401, 403, 404, 500, 502, 503, etc.) that commonly appear in access logs without the word "error".
+Combine multiple signals to catch errors regardless of log structure.
+
+**NEVER regex the body for HTTP status codes.** A pattern like `[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]` matches any three-digit number starting with 4 or 5 anywhere in the line, which on real log data means 43% of all rows at roughly 5% precision — `AppleWebKit/537.36` reads as a 5xx, as does a latency of `0.412` or `replicas 500`. It buries the keyword and severity signals it is OR'd with. Filter the dataset's own status field instead (`filter int64(status_code) >= 400`), and when there is no such field, keyword and severity are the whole answer. See `opal-regex.md`.
 
 **CRITICAL: Check the dataset schema BEFORE using `severity_number` or `severity_text`.** Many log datasets (especially K8s container logs collected via Fluentd/Fluent Bit) do NOT have these fields. Only include severity conditions if the field exists in the target dataset's schema field list. Using a non-existent field causes a fatal validation error.
 
@@ -137,25 +139,25 @@ Combine multiple signals to catch errors regardless of log structure. Keyword ma
 
 DEFAULT (no `[TokenIndex]` marker visible) — WITH `severity_number` in schema:
 
-    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or severity_number >= 17 or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or severity_number >= 17
 
 DEFAULT (no `[TokenIndex]` marker visible) — WITHOUT `severity_number` in schema:
 
-    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i"))
 
 OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITH `severity_number` in schema:
 
-    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or severity_number >= 17 or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or severity_number >= 17
 
 OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITHOUT `severity_number` in schema:
 
-    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i
 
 | Signal                                                           | What it catches                                                                        | Requires schema field?       |
 | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------- | :--------------------------- |
 | Keyword regex (`error\|exception\|fail\|fatal\|panic\|critical`) | Application error messages, stack traces, failure logs                                 | No — works on any body field |
 | `severity_number >= 17`                                          | OTel ERROR (17-20) and FATAL (21-24) severity levels                                   | **Yes** — `severity_number`  |
-| HTTP status regex (`4[0-9]{2}\|5[0-9]{2}`)                       | 4xx client errors (401, 403, 404) and 5xx server errors (500, 502, 503) in access logs | No — works on any body field |
+| `int64(status_code) >= 400`                                      | 4xx client errors (401, 403, 404) and 5xx server errors (500, 502, 503) in access logs | **Yes** — a status field     |
 
 ### Avoid redundant filters
 

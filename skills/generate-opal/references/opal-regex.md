@@ -1,19 +1,25 @@
 # OPAL Regex & Pattern Matching — Complete Reference
 
-## POSIX ERE — NOT PCRE (CRITICAL)
+## POSIX ERE plus Perl shorthands — NOT full PCRE
 
-**All OPAL regex uses POSIX ERE.** This applies everywhere: `~ /pattern/`, `match_regex()`, `replace_regex()`, `get_regex()`, `extract_regex`, and `regex()`. PCRE shorthands do not exist — use character classes instead:
+**OPAL regex is Snowflake's POSIX ERE plus the Perl backslash shorthands.** This applies everywhere: `~ /pattern/`, `match_regex()`, `replace_regex()`, `get_regex()`, `extract_regex`, and `regex()`.
 
-| PCRE (WRONG) | POSIX ERE (CORRECT)   |
-| :----------- | :-------------------- |
-| `\d`         | `[0-9]`               |
-| `\w`         | `[a-zA-Z0-9_]`        |
-| `\s`         | `[[:space:]]`         |
-| `\b`         | `[[:<:]]` / `[[:>:]]` |
+`\d`, `\w`, `\s`, and `\b` all work. So do the POSIX classes — use whichever reads better:
 
-Non-greedy quantifiers (`*?`, `+?`) are NOT supported.
+| Shorthand | POSIX equivalent |
+| :-------- | :--------------- |
+| `\d`      | `[0-9]`          |
+| `\w`      | `[a-zA-Z0-9_]`   |
+| `\s`      | `[[:space:]]`    |
+| `\b`      | none — use `\b`  |
 
-**NEVER use inline `(?...)` flag groups** — `(?i)`, `(?m)`, etc. are PCRE syntax. Snowflake/OPAL uses POSIX ERE and rejects them with a parse error (`no argument for repetition operator: ?`). Pass flags as a separate argument or as a slash suffix instead:
+**NEVER use `[[:<:]]` / `[[:>:]]` for word boundaries.** That is MySQL syntax. Snowflake rejects it outright with `invalid character class range: [:<:]`, failing the whole query. Use `\b`.
+
+What genuinely does not exist: **lookahead `(?=`, lookbehind `(?<=`, and backreferences `\1`**. OPAL validates every pattern with Go's `regexp` (RE2), which does not support them, so such a pattern is rejected at compile time and never reaches the warehouse. Contrast this with the inline flags `(?i)` and non-capturing groups `(?:...)` below: those _pass_ RE2 validation and DO reach the warehouse, then fail at Snowflake execution — a more dangerous class, because there is no compile-time safety net.
+
+Non-greedy quantifiers (`*?`, `+?`) DO work in queries — `<.*?>` against `<a><b>` matches just `<a>`.
+
+**NEVER use inline `(?...)` flag groups (`(?i)`, `(?m)`, `(?s)`) or non-capturing groups `(?:...)`.** Both are PCRE syntax that OPAL's RE2 validator _accepts_ — so they compile, and can even work under `REGEXP_SUBSTR` — but Snowflake's `REGEXP_LIKE`/`RLIKE` rejects both with `no argument for repetition operator: ?` and fails the query. This makes them unreliable in the hardest way to debug: `match_regex`/`~` normally compile to `REGEXP_SUBSTR`, but on a substring-indexed body column they silently switch to the `RLIKE` path, so the exact same pattern that worked on one dataset hard-errors on another. This is confirmed in production. Rewrite instead — pass an inline flag as a separate argument or a slash suffix, and replace `(?:group)` with a plain group `(group)`:
 
     filter match_regex(eventName, /getpolicy/i)                              # slash suffix — case-insensitive
     filter match_regex(log, /^debug/, 'i')                                   # flags argument
@@ -21,7 +27,7 @@ Non-greedy quantifiers (`*?`, `+?`) are NOT supported.
 
 Supported flags: `c` (case-sensitive, default), `i` (case-insensitive), `m` (multiline), `s` (dot matches newline). The same optional flags argument applies to `extract_regex`, `get_regex`, and `get_regex_all`.
 
-Note: `(?P<name>)` **named capture groups** are valid OPAL syntax and remain supported — only the `(?i)`/`(?m)` **flag** form is rejected.
+Note: `(?P<name>)` **named capture groups** and plain `(...)` groups are valid OPAL syntax and remain supported — only the `(?i)`/`(?m)`/`(?s)` **flag** form and the `(?:...)` **non-capturing** form are rejected. Rewriting `(?:group)` to `(group)` is safe for `match_regex`/`~`, where the capture is never read.
 
 WRONG/CORRECT:
 
@@ -29,6 +35,9 @@ WRONG/CORRECT:
     CORRECT: filter match_regex(body, /order[_-]?id.*/i)
     CORRECT: filter match_regex(body, /order[_-]?id.*/, 'i')
     CORRECT: filter match_regex(body, regex("order[_-]?id.*", "i"))
+
+    WRONG:   filter match_regex(body, /(aws-waf-logs-prod(?:-[0-9])?)-[0-9]{4}/)
+    CORRECT: filter match_regex(body, /(aws-waf-logs-prod(-[0-9])?)-[0-9]{4}/)
 
 ---
 
@@ -113,25 +122,33 @@ The `~` operator has two forms (use only when `[TokenIndex]` is visible on the f
 
 ## Wide-Net Error Regex Patterns
 
-Combine multiple signals to catch errors regardless of log structure. Keyword matching alone misses HTTP error status codes (401, 403, 404, 500, 502, 503, etc.).
+Combine multiple signals to catch errors regardless of log structure.
+
+**NEVER regex the body for HTTP status codes.** A pattern like `[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]` matches any three-digit number starting with 4 or 5 anywhere in the line, which on real log data means 43% of all rows at roughly 5% precision — `AppleWebKit/537.36` reads as a 5xx, as does a latency of `0.412` or `replicas 500`. It buries the keyword and severity signals it is OR'd with.
+
+To catch HTTP errors, filter the **status field** the dataset already has (`status_code`, `status`, `response_code` — check the schema's `## Fields` section):
+
+    filter int64(status_code) >= 400
+
+If the dataset has no status field, the keyword and severity signals below are the whole answer. A body scan for bare numbers is not a substitute.
 
 **CRITICAL: Default to `match_regex()` for the keyword alternation, NOT `~`.** Only use `~ /.../i` when the body field is explicitly marked `[TokenIndex]` in the schema's `## Fields` section.
 
 DEFAULT (no `[TokenIndex]` marker visible) — WITH `severity_number` in schema:
 
-    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or severity_number >= 17 or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or severity_number >= 17
 
 DEFAULT (no `[TokenIndex]` marker visible) — WITHOUT `severity_number` in schema:
 
-    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i"))
 
 OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITH `severity_number` in schema:
 
-    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or severity_number >= 17 or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or severity_number >= 17
 
 OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITHOUT `severity_number` in schema:
 
-    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or match_regex(string(body), regex("[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]"))
+    filter string(body) ~ /error|exception|fail|fatal|panic|critical/i
 
 **CRITICAL: Check the dataset schema BEFORE using `severity_number`.** Many log datasets do NOT have this field.
 
@@ -139,4 +156,6 @@ OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITHOUT `severity
 | :--------------------------------------------------------------- | :----------------------------------------------------- | :-------------------------- |
 | Keyword regex (`error\|exception\|fail\|fatal\|panic\|critical`) | Application error messages, stack traces, failure logs | No — works on any body      |
 | `severity_number >= 17`                                          | OTel ERROR (17-20) and FATAL (21-24) severity levels   | **Yes** — `severity_number` |
-| HTTP status regex (`4[0-9]{2}\|5[0-9]{2}`)                       | 4xx client errors and 5xx server errors in access logs | No — works on any body      |
+| `int64(status_code) >= 400`                                      | 4xx client errors and 5xx server errors in access logs | **Yes** — a status field    |
+
+**Do not add a fourth signal that regexes the body for status codes.** See the warning at the top of this section.

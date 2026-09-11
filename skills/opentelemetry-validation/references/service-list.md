@@ -22,7 +22,7 @@ Example query:
 observe query --input <tracing-service-id> --interval 4h --limit 20 --json --pipeline '
 filter environment = "<environment>"
 filter service_name = "<service-name>"
-pick_col @."Valid From", @."Valid To", service_name, environment, service_namespace, language, host_type, service_type, database
+pick_col @."Valid From", @."Valid To", service_name, environment, service_namespace, language, host_type, service_type
 sort asc(service_name)'
 ```
 

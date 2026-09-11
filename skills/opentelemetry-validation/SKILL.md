@@ -205,7 +205,7 @@ PASS if breakdown metric families are queryable for the service.
 
 Run checks from [references/database-service-detection.md](references/database-service-detection.md).
 
-PASS if a database service row returns (`service_type` is `Database`, `database` is `true`) and the database R.E.D check returns data. Mark this check as SKIP when the service has no expected database dependencies.
+PASS if a database service row returns (`service_type` is `Database`) and the database R.E.D check returns data. Mark this check as SKIP when the service has no expected database dependencies.
 
 #### Check 9: Instrumentation Audit
 

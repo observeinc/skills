@@ -35,7 +35,7 @@ To find entities **currently** stuck in a state past a threshold, select current
     make_col state_duration:coalesce(row_end_time(), now()) - row_start_time()
     make_col state_minutes:to_minutes(state_duration)
     filter state_duration > duration_min(10)
-    pick_col @."Valid From":row_start_time(), @."Valid To":row_end_time(), name, namespace, uid, clusterUid, status, statusReason, statusMessage, nodeName, state_minutes
+    pick_col valid_from:row_start_time(), valid_to:row_end_time(), name, namespace, uid, clusterUid, status, statusReason, statusMessage, nodeName, state_minutes
     topk 100, max(state_minutes)
 
 Key points:
@@ -45,7 +45,7 @@ Key points:
 - Do NOT add `filter is_null(row_end_time())` / `filter is_null(@."Valid To")` — it almost always returns zero rows
 - Duration uses `coalesce(row_end_time(), now())` so rows whose state already ended are measured correctly instead of `now() - row_start_time()` alone
 - `topk` is required instead of `limit` for Resource datasets
-- Retain temporal columns in `pick_col`: `row_start_time()` for valid-from and `row_end_time()` for valid-to
+- Retain temporal columns in `pick_col` with required aliases, for example `valid_from:row_start_time()` and `valid_to:row_end_time()`. Bare `row_start_time()` or `row_end_time()` entries in `pick_col` are invalid.
 - Include ALL `primaryKey` columns in `pick_col` — this dataset's primary key is `["name", "namespace", "uid", "clusterUid"]`, so all four must appear. Check the schema's `primaryKey` array for every Resource dataset before writing `pick_col`
 
 ## Worked Example: Stale Resources (Not Updated in 30 Days)
@@ -53,7 +53,7 @@ Key points:
     make_col age:coalesce(row_end_time(), now()) - row_start_time()
     filter age > 30d
     make_col age_days:to_hours(age) / 24
-    pick_col @."Valid From":row_start_time(), @."Valid To":row_end_time(), name, namespace, uid, clusterUid, age_days
+    pick_col valid_from:row_start_time(), valid_to:row_end_time(), name, namespace, uid, clusterUid, age_days
     topk 100, max(age_days)
 
 Key points:
@@ -82,7 +82,7 @@ Use these instead of multi-step `filter` + `statsby` patterns when the question 
 
 ## Resource Dataset Checklist (verify before every Resource query)
 
-1. **BOTH temporal columns in `pick_col`**: Use `row_start_time()` for valid-from and `row_end_time()` for valid-to. Omitting either will cause an error.
+1. **BOTH temporal columns in `pick_col`**: Use aliased expressions such as `valid_from:row_start_time()` and `valid_to:row_end_time()`. Omitting either or using a bare function call will cause an error.
 2. **ALL `primaryKey` columns in `pick_col`**: Check the schema's `primaryKey` array and include every column listed.
 3. **`topk` instead of `limit`**: Resource datasets reject `limit` — error: `"limit" does not support Resource kind input, use "topk" instead`. Always use `topk N, max(col)` with an aggregate scoring function.
 4. **`topk` requires aggregate scoring**: `topk 20, max(col)` — never `topk 20, col` (bare column is invalid).
