@@ -9,7 +9,7 @@
     - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
     - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
     - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-4. **Verify dimension/tag field names from the dataset schema.** The top-level field that holds metric dimensions varies by dataset — it may be `tags`, `resource_attributes`, `labels`, or something else. NEVER assume `resource_attributes` exists. Check the schema's field list and use only fields that actually exist on the target dataset (see **Dimension Field Names Vary by Dataset** below).
+4. **Resolve dimensions through correlation tags first.** Check the selected dataset's `correlationTagMappings`. When the desired dimension is mapped and all mappings represent the same semantic role, use native `#tag` syntax directly in `filter` and `group_by`; do not reconstruct it with `make_col` or its physical field path. If mappings represent distinct roles such as caller and downstream service, use the requested role's physical mapped path so native syntax does not coalesce them. Only inspect other physical fields when no mapped correlation tag represents the dimension (see **Dimension Selection: Correlation Tag First** below).
 5. Choose output shape:
     - Summary (default) → use `align options(bins: 1)` pattern
     - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
@@ -48,6 +48,25 @@ Before writing ANY `align` expression, you MUST check the metric's `type` field 
 
 Metric datasets (interface=metric) store pre-aggregated measurements. They MUST use align before aggregation.
 
+### Prefer native correlation-tag references for dimensions
+
+For every filter or grouping dimension, use this order:
+
+1. Check the selected input dataset's `correlationTagMappings` for the desired tag.
+2. If mapped, inspect each mapping's `path.path`. Two mappings are **not** automatically two roles: OpenTelemetry metrics may map `deployment.environment.name` to both `deployment.environment` and `deployment.environment.name`, and `#tag` is still correct there. Treat mappings as distinct roles only when those `path.path` values look like different entities (`parent.*`, `peer.*`, caller vs downstream). When they do not, reference the tag directly in `group_by`: `#k8s.cluster.name` or `#"service.name"`. Where the metric dataset permits a pre-`align` filter (the Prometheus exception below), use the same native tag reference there too.
+3. If those `path.path` values look like distinct entities, use the physical mapped path for the requested role. Dataset search only returns `{tag, path}` — infer the role from the path. For example, Service Edge Metrics maps `service.name` to both `tags."service.name"` and `tags."parent.service.name"`; `#"service.name"` would coalesce caller and parent.
+4. If not mapped, use the physical schema path (`tags.*`, `resource_attributes.*`, `labels.*`, `FIELDS.*`, or a top-level column).
+
+Native `#tag` references resolve and coalesce all mapped backing paths. Do not emit `make_col cluster:string(resource_attributes."k8s.cluster.name")` merely to filter or group by a single-role mapped `k8s.cluster.name` tag. When role matters, use the selected physical mapped path directly.
+
+```opal
+align options(bins: 1), cpu:avg(m("system.cpu.utilization"))
+aggregate avg_cpu:avg(cpu), group_by(#k8s.cluster.name)
+filter k8s_cluster_name = "prod"
+```
+
+Tag names containing punctuation may be quoted (`#"service.name"`). Direct tag groupings create normalized output names for downstream verbs: `#k8s.cluster.name` becomes `k8s_cluster_name`, and `#"service.name"` becomes `service_name`.
+
 ### NEVER filter before align on metric datasets
 
 Do NOT use `filter` before `align` — metric datasets require `align` as the first verb. To select a specific metric, use `m("metric_name")` inside `align`. To filter by tag values, put `filter` AFTER `aggregate`.
@@ -70,9 +89,9 @@ CORRECT — include the dimension in group_by, then filter on the alias:
 
 ```opal
 align 5m, cpu:avg(m("system.cpu.utilization"))
-aggregate avg_cpu:avg(cpu), group_by(svc:string(tags."service.name"), ns:string(tags."k8s.namespace.name"))
-filter svc = "scheduler"
-filter ns = "o2"
+aggregate avg_cpu:avg(cpu), group_by(#"service.name", #k8s.namespace.name)
+filter service_name = "scheduler"
+filter k8s_namespace_name = "o2"
 ```
 
 WRONG — filtering on original field paths after aggregate (fields no longer exist — `"tags" does not exist after aggregate`):
@@ -83,23 +102,23 @@ aggregate avg_cpu:avg(cpu), group_by(svc:string(tags."service.name"))
 filter string(tags."k8s.namespace.name") = "o2"
 ```
 
-After `aggregate`, the ONLY columns that exist are the `group_by` aliases and aggregate results. To filter on a dimension post-aggregate, that dimension MUST appear in `group_by()` — then filter on the alias name, not the original field path.
+After `aggregate`, the ONLY columns that exist are the `group_by` outputs and aggregate results. To filter on a dimension post-aggregate, that dimension MUST appear in `group_by()` — then filter on its output name, not the original `#tag` or field path.
 
 ### Scope qualifiers — filtering metrics by user-specified subset
 
-When the user asks for a specific _type_ of request, operation, or category within a metric (e.g., "login latency", "write throughput", "payment errors"), the qualifying term MUST become a filter in the pipeline. Check the metric's `heuristics.tags` for a dimension that expresses the qualifier (e.g., `http.route`, `http.target`, `url.path`, `rpc.method`, `verb`), include it in `group_by`, and filter post-aggregate.
+When the user asks for a specific _type_ of request, operation, or category within a metric (e.g., "login latency", "write throughput", "payment errors"), the qualifying term MUST become a filter in the pipeline. Check the metric's `heuristics.tags` for a dimension that expresses the qualifier (e.g., `http.route`, `http.target`, `url.path`, `rpc.method`, `verb`). If that dimension is a single-role mapped correlation tag, include the native `#tag` in `group_by`; otherwise use the requested role's physical mapped path or an unmapped physical field. Filter post-aggregate on the resulting output column.
 
 Example — user asks for "login latency of the apiserver by namespace last hour" against metric `apiserver.request.duration` (exponentialHistogram). "login" is a scope qualifier → filter on an HTTP path/route dimension:
 
 ```opal
 align options(bins: 1), combined:histogram_combine(m_exponential_histogram("apiserver.request.duration"))
-aggregate combined:histogram_combine(combined), group_by(ns:string(resource_attributes."k8s.namespace.name"), path:string(resource_attributes."http.target"))
+aggregate combined:histogram_combine(combined), group_by(#k8s.namespace.name, path:string(resource_attributes."http.target"))
 filter contains(path, "login")
 make_col p50:histogram_quantile(combined, 0.50),
          p95:histogram_quantile(combined, 0.95),
          p99:histogram_quantile(combined, 0.99)
 make_col p50_ms:round(p50 * 1000, 2), p95_ms:round(p95 * 1000, 2), p99_ms:round(p99 * 1000, 2)
-pick_col valid_from, valid_to, ns, path, p50_ms, p95_ms, p99_ms
+pick_col valid_from, valid_to, k8s_namespace_name, path, p50_ms, p95_ms, p99_ms
 sort desc(p99_ms)
 ```
 
@@ -117,7 +136,7 @@ sort desc(total_rate)
 
 ```opal
 filter labels.status ~ <5*>
-filter labels.k8s_cluster_name = 'k8s.eu-1.observeinc.com'
+filter #k8s.cluster.name = "k8s.eu-1.observeinc.com"
 ```
 
 Note: Prometheus datasets use `labels.*` for metric labels, while OpenTelemetry metric datasets use `tags.*` or `resource_attributes.*`. Check the dataset schema. Dimensions are typically nested inside an OBJECT column — **always use the dataset schema to find the correct access path** rather than assuming bare field names exist at the top level.
@@ -127,10 +146,10 @@ Note: Prometheus datasets use `labels.*` for metric labels, while OpenTelemetry 
 Gauge metric — last known value grouped by dimensions:
 
 ```opal
-filter string(labels.service_name) = "transformer"
+filter #"service.name" = "transformer"
 filter string(labels.deployment_environment) = "prod"
 align options(bins: 1), startup_dur:last_not_null(m("transformer_startup_duration_seconds"))
-aggregate max_dur:max(startup_dur), group_by(version:string(labels.service_version), pod:string(labels.k8s_pod_name))
+aggregate max_dur:max(startup_dur), group_by(version:string(labels.service_version), #k8s.pod.name)
 sort desc(max_dur)
 ```
 
@@ -139,7 +158,7 @@ Counter metric — request rate grouped by dimensions:
 ```opal
 filter string(labels.deployment_environment) = "prod"
 align options(bins: 1), req_rate:rate(m("nginx_ingress_controller_requests_total"))
-aggregate total_rate:sum(req_rate), group_by(status:string(labels.status), pod:string(labels.k8s_pod_name))
+aggregate total_rate:sum(req_rate), group_by(status:string(labels.status), #k8s.pod.name)
 ```
 
 **Default to summary output.** Unless the user explicitly asks for a time-series, trend, or chart, use `align options(bins: 1)` to collapse the entire time window into a single bin.
@@ -222,8 +241,8 @@ Rolling rate example (7-day rolling failure rate by service):
 
 ```opal
 align 1h, errors:sum(m("error_count")), requests:sum(m("request_count"))
-aggregate total_errors:sum(errors), total_requests:sum(requests), group_by(svc:string(tags."service.name"))
-make_col rolling_errors:window(sum(total_errors), group_by(svc), frame(back:7d)), rolling_requests:window(sum(total_requests), group_by(svc), frame(back:7d))
+aggregate total_errors:sum(errors), total_requests:sum(requests), group_by(#"service.name")
+make_col rolling_errors:window(sum(total_errors), group_by(service_name), frame(back:7d)), rolling_requests:window(sum(total_requests), group_by(service_name), frame(back:7d))
 make_col rolling_failure_rate:100.0 * float64(rolling_errors) / float64(rolling_requests)
 ```
 
@@ -262,7 +281,7 @@ For histogram metrics, use `m_histogram()` instead of `m_tdigest()`:
 
 ```opal
 align options(bins: 1), combined:histogram_combine(m_histogram("apiserver.request.duration"))
-aggregate combined:histogram_combine(combined), group_by(namespace:string(resource_attributes."k8s.namespace.name"))
+aggregate combined:histogram_combine(combined), group_by(#k8s.namespace.name)
 make_col p50:histogram_quantile(combined, 0.50),
          p95:histogram_quantile(combined, 0.95),
          p99:histogram_quantile(combined, 0.99)
@@ -290,7 +309,7 @@ Distribution columns (`tdigest`, `histogram`, `exponentialHistogram`) have no me
 
 ```opal
 align 5m, combined:histogram_combine(m_tdigest("apm_service_duration"))
-aggregate combined:histogram_combine(combined), group_by(svc:string(tags."service.name"))
+aggregate combined:histogram_combine(combined), group_by(#"service.name")
 make_col p50:histogram_quantile(combined, 0.50), p99:histogram_quantile(combined, 0.99)
 fill p50:float64_null(), p99:float64_null()
 ```
@@ -311,9 +330,11 @@ make_col error_rate:100.0 * float64(total_errors) / float64(total_requests)
 sort desc(error_rate)
 ```
 
-### Dimension Field Names Vary by Dataset (CRITICAL)
+### Dimension Selection: Correlation Tag First (CRITICAL)
 
-The field that holds metric dimensions/tags is NOT the same across all metric datasets. You MUST check the dataset schema to determine the correct top-level field name. Common variants:
+First inspect `correlationTagMappings`. A mapped dimension should use native `#tag` syntax when all backing paths represent the same semantic concept. This is shorter and more robust for equivalent alternate paths. If the paths represent distinct roles, select the requested role's physical path instead of coalescing them.
+
+When the desired dimension has no correlation-tag mapping, check the dataset schema for its physical field. The field that holds metric dimensions is NOT the same across all metric datasets. Common fallbacks are:
 
 | Dataset type        | Dimension field       | Example access                       |
 | :------------------ | :-------------------- | :----------------------------------- |
@@ -323,15 +344,15 @@ The field that holds metric dimensions/tags is NOT the same across all metric da
 | APM/Tracing metrics | `tags`                | `tags."service.name"`                |
 | AWS CloudWatch      | `FIELDS`              | `FIELDS."namespace"`                 |
 
-**Using the wrong field name is a fatal validation error** — e.g., referencing `resource_attributes."service.name"` when the dataset only has `tags` produces: `the field "resource_attributes" does not exist`. Always confirm the field exists in the schema before using it in `group_by`, `filter`, or `make_col`.
+**Using the wrong field name is a fatal validation error** — e.g., referencing `resource_attributes."service.name"` when the dataset only has `tags` produces: `the field "resource_attributes" does not exist`. Prefer the mapped `#"service.name"` tag when available. For an unmapped dimension, confirm the physical field exists before using it in `group_by`, `filter`, or `make_col`.
 
-### Tags OBJECT grouping & column naming
+### Correlation-tag grouping and output naming
 
-Metric datasets group by a compound dimension OBJECT (often `tags`, `resource_attributes`, or `labels` — check the schema):
-`group_by(svc:string(tags."service.name"))` → output column: `svc`
-Use the alias name (not the expression) in subsequent `make_col`/`sort`/`filter`.
+Mapped metric dimensions should be grouped directly:
+`group_by(#"service.name")` → output column: `service_name`
+Use the normalized output name (not the `#tag` expression) in subsequent `make_col`/`sort`/`filter`. For an unmapped physical expression, provide an alias as usual: `group_by(svc:string(tags."custom.service"))` → output column `svc`.
 
-Null tags: metric tags can be null. Add `filter not is_null(svc)` after `aggregate` to exclude.
+Null tags: metric tags can be null. Add `filter not is_null(service_name)` after `aggregate` to exclude.
 
 ### Timechart for time-series visualization
 
@@ -618,4 +639,4 @@ timewrap 7d, 2, "week"
 - **Use `topk`/`bottomk` after `aggregate` — not `sort` + `limit`.** Always use an aggregate scoring function: `topk 20, max(col)` or `bottomk 10, min(col)`. Never pass a bare column to `topk` — `topk 20, col` is invalid.
 - **Don't `sort` time-series output.** After `align` + `aggregate` (without `options(bins: 1)`), the output is a time series ordered by `valid_from`. Adding `sort desc(value)` scrambles the time axis, breaking chart rendering. Use `sort` only on summary output (`options(bins: 1)`) where each row is a group, not a time bin. For ranking time-series groups, use `topk` instead.
 - **Don't reuse existing column names in `align` or `group_by`.** Check the dataset schema before choosing names. `align` aliases that collide with existing columns cause `"cannot create column X more than once"`. `group_by` aliases that collide cause `"attempting to overwrite existing column"`. For `group_by`, use the bare column name when no casting is needed, or pick a new alias — `group_by(host, datacenter)` is fine, but `group_by(host:string(host))` is rejected because `host` already exists. For `align`, use a distinct alias — `cpu_avg:avg(m("cpu_utilization"))` instead of `cpu:avg(...)` when a `cpu` column already exists.
-- **Don't assume dimension field names.** The top-level field for metric dimensions varies: `tags`, `resource_attributes`, `labels`, `FIELDS`, etc. Using the wrong one (e.g., `resource_attributes` when the dataset has `tags`) causes `"field does not exist"` errors. Always verify from the dataset schema.
+- **Don't reconstruct single-role mapped correlation tags.** If `correlationTagMappings` exposes one semantic dimension, use native `#tag` syntax in `filter`/`group_by` instead of a redundant `make_col`. When multiple mappings represent distinct roles, use the requested role's physical mapped path so `#tag` does not coalesce away the distinction. Also use physical paths for dimensions without a mapped correlation tag, and verify every path from the dataset schema.

@@ -207,8 +207,10 @@ Correlation tags map the same concept (e.g., "service.name") to the correct OPAL
 ### How to use correlation tags
 
 1. Find which datasets share a correlation tag (same tag name in both catalog entries).
-2. Use each dataset's opalField — do NOT assume field names are the same across datasets.
-3. Filter each dataset by the same tag value to correlate results.
+2. Verify the tag appears in each selected dataset's `correlationTagMappings`.
+3. Prefer the native `#tag` reference in each dataset's pipeline (for example, `filter #"service.name" = "checkout"` or `group_by(#"service.name")`) when coalescing all of that dataset's mappings matches the requested concept.
+4. If the tag has multiple mappings with distinct semantic roles, such as caller and downstream service, use the role-specific physical `opalField`; `#tag` would coalesce the roles and lose that distinction. Also use a physical field when the dimension is not exposed as a correlation tag. Do not assume physical field names are the same across datasets.
+5. Filter each dataset by the same tag value to correlate results.
 
 ---
 
