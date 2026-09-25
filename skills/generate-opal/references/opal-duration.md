@@ -125,8 +125,16 @@ On Resource datasets, do NOT filter on valid-to (`filter is_null(row_end_time())
 ## Timestamp Formatting
 
     make_col time_str:format_time(row_start_time(), "YYYY-MM-DD HH24:MI:SS")
+    make_col min_of_hour:int64(format_time(row_start_time(), "MI"))
+    make_col hour:int64(format_time(row_start_time(), "HH24"))
 
 Format tokens use **Snowflake conventions** (NOT strftime): `YYYY`, `MM`, `DD`, `HH24`, `MI`, `SS`, `AM`/`PM`, `DY`, `MON`.
+There is **no** `strftime()` or `minute()` function.
+
+    WRONG:   make_col min_of_hour:int64(strftime(row_start_time(), "%M"))
+    WRONG:   make_col min_of_hour:int64(minute(row_start_time()))
+    WRONG:   make_col min_of_hour:mod(int64(row_start_time()) / 60000000000, 60)
+    CORRECT: make_col min_of_hour:int64(format_time(row_start_time(), "MI"))
 
 ## Timestamp Parsing
 
@@ -143,6 +151,8 @@ Format tokens use **Snowflake conventions** (NOT strftime): `YYYY`, `MM`, `DD`, 
 
 ## Common Pitfalls
 
+- Using `strftime()` or `minute()` → those functions do not exist. Extract clock fields with `format_time(row_start_time(), "MI")` / `"HH24"` (Snowflake tokens, not `%M`)
+- Dividing `int64(row_start_time())` by `60000000000` to get minute-of-hour → type error. Use `format_time(..., "MI")`
 - Using strftime format (`%Y-%m-%d`) → use Snowflake format: `YYYY-MM-DD`
 - Comparing duration to number → compare durations: `elapsed > duration_sec(5)` not `elapsed > 5`
 - Forgetting `string()` in parse_isotime → `parse_isotime(string(col))`

@@ -1,6 +1,6 @@
 ---
 name: generate-opal
-description: >
+description: >-
     Contains dataset kind selection, column selection rules, core syntax, and the skill index. NEVER
     generate OPAL, and NEVER invoke an opal-* reference, without first loading
     this skill.
@@ -311,7 +311,7 @@ All OPAL regex is **POSIX ERE plus the Perl backslash shorthands** (NOT full PCR
 - **Prefer one subquery within that card.** Multi-subquery syntax is only needed for joins, unions, and exists.
 - **Metrics use `align` and metric functions.** Exception: datasets with `OBSERVATION_KIND` or `FIELDS` — use `timechart`/`statsby`.
 - **Dataset field naming varies.** OTel uses `attributes."..."`, Prometheus uses `labels."..."`, AWS uses `FIELDS."..."`. Always check the schema.
-- **Reference datasets by input name.** In join verbs, use `@"inputName"` matching `inputs` — never raw dataset IDs.
+- **Reference datasets by input name.** In join verbs, use `@"inputName"` matching `inputs` — never raw dataset IDs. `@"…"` is never a timestamp literal — use `parse_isotime(...)`.
 - **Only use documented functions.** OPAL function names may differ from other languages (e.g., `decode_base64` not `base64_decode`, `concat_strings` not `concat`). If unsure whether a function exists, don't guess — use documented alternatives or describe the transform needed.
 
 ---
