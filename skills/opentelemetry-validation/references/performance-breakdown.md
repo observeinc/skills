@@ -41,8 +41,14 @@ make_col service_kind:coalesce(string(tags."service.kind"), "INTERNAL")
 make_col service_kind:case(
     service_kind = "INTERNAL", "Internal",
     service_kind = "DATABASE", "Database",
-    service_kind = "E_HTTP", "HTTP",
-    service_kind = "E_OTHER", "External Non-HTTP",
+    service_kind = "E_HTTP" and not is_null(tags."peer.server.address"), "External - HTTP",
+    service_kind = "E_HTTP" and is_null(tags."peer.server.address"), "HTTP",
+    service_kind = "E_OTHER" and not is_null(tags."peer.server.address"), "External - Non-HTTP",
+    service_kind = "E_OTHER" and is_null(tags."peer.server.address"), "Non-HTTP",
+    service_kind = "E_ASYNC_CONSUMER" and not is_null(tags."peer.messaging.system"), "Message Broker - Consumer",
+    service_kind = "E_ASYNC_PRODUCER" and not is_null(tags."peer.messaging.system"), "Message Broker - Producer",
+    service_kind = "E_ASYNC_CONSUMER" and is_null(tags."peer.messaging.system"), "Async Consumer",
+    service_kind = "E_ASYNC_PRODUCER" and is_null(tags."peer.messaging.system"), "Async Producer",
     true, lower(service_kind)
 )
 make_col binSize:valid_to - valid_from
