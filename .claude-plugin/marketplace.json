@@ -3,6 +3,7 @@
   "owner": {
     "name": "Observe Inc."
   },
+  "description": "Agent skills and MCP configuration for investigating and managing Observe's observability platform",
   "plugins": [
     {
       "name": "observe",
