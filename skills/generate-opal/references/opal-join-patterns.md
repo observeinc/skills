@@ -192,24 +192,29 @@ If a named subquery contains an earlier syntax or type error, later references t
 
 ## Cross-Dataset Correlation
 
-Correlation tags map the same concept (e.g., "service.name") to the correct OPAL field path in each dataset, even when field names differ. Each dataset's catalog entry shows `CorrelationTags: tag→opalField`.
+Correlation tags map the same concept (e.g., "service.name") to the correct OPAL field path in each dataset, even when field names differ. DatasetSearch returns each dataset's mappings in `correlationTags` as `{tag, path: {field, path}}`. Build the OPAL field from `path.field` and `path.path`:
+
+- `path` is a nested key: append it with a dot. `{field: "tags", path: "\"service.name\""}` → `tags."service.name"`.
+- `path` is `""`: the tag sits on the column itself, so use the column alone. `{field: "cluster", path: ""}` → `cluster` (not `cluster.`).
+- `path` starts with `[`: append it with no dot. `{field: "tags", path: "[0].name"}` → `tags[0].name`.
 
 ### Example: spans → logs correlation via service.name
 
-    # Query 1: Find error services in spans (opalField: service_name)
+    # Query 1: Find error services in spans (mapped field: service_name)
     filter error = true
     statsby error_count:count(), group_by(service_name)
 
-    # Query 2: Get logs for that service (opalField: resource_attributes."service.name")
+    # Query 2: Get logs for that service (mapped field: resource_attributes."service.name")
     filter string(resource_attributes."service.name") = "checkout-service"
-    pick_col timestamp, severity_text, body
+    // Event log: valid-from only. Interval and Resource also need valid_to:row_end_time().
+    pick_col valid_from:row_start_time(), severity_text, body
 
 ### How to use correlation tags
 
-1. Find which datasets share a correlation tag (same tag name in both catalog entries).
-2. Verify the tag appears in each selected dataset's `correlationTagMappings`.
+1. Find which datasets share a correlation tag (same `tag` in both datasets' `correlationTags`).
+2. Verify the tag appears in each selected dataset's `correlationTags`.
 3. Prefer the native `#tag` reference in each dataset's pipeline (for example, `filter #"service.name" = "checkout"` or `group_by(#"service.name")`) when coalescing all of that dataset's mappings matches the requested concept.
-4. If the tag has multiple mappings with distinct semantic roles, such as caller and downstream service, use the role-specific physical `opalField`; `#tag` would coalesce the roles and lose that distinction. Also use a physical field when the dimension is not exposed as a correlation tag. Do not assume physical field names are the same across datasets.
+4. If the tag has multiple mappings with distinct semantic roles, such as caller and downstream service, use the role-specific physical field built from that entry's `path`; `#tag` would coalesce the roles and lose that distinction. Also use a physical field when the dimension is not exposed as a correlation tag. Do not assume physical field names are the same across datasets.
 5. Filter each dataset by the same tag value to correlate results.
 
 ---

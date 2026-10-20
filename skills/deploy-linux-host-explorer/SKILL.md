@@ -1,14 +1,15 @@
 ---
 name: deploy-linux-host-explorer
 description: >-
-    End-to-end Host Explorer deployment for Observe — creates backend resources
-    (datastreams, content, ingest token) via the Observe CLI and installs the
-    observe-agent on a Linux host. Use this skill whenever the user mentions
-    setting up Observe on a Linux machine, onboarding a host (Ubuntu, Debian,
-    RHEL, CentOS) to Observe, deploying host monitoring from the terminal or
-    CI, or replacing the Observe UI's Host setup wizard — even if they don't
-    say "Host Explorer" explicitly. Orchestrates setup-linux-host-backend and
-    setup-linux-host-collection.
+    Full onboard of a Linux host to Observe, including the agent install:
+    creates datastreams, content, and an ingest token, then installs
+    observe-agent on the host. Use this skill for "onboard my host", "set up
+    a Linux server in Observe from scratch", or any request that needs both
+    Observe-side resources and the agent on Ubuntu, Debian, RHEL, or CentOS.
+    Do not load setup-linux-host-backend for a full onboard — that skill is
+    Observe-side resources only. This skill delegates to
+    setup-linux-host-backend and setup-linux-host-collection after it owns
+    the request.
 ---
 
 **MANDATORY:** Run `observe skill view deploy-linux-host-explorer --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view deploy-linux-host-explorer --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.

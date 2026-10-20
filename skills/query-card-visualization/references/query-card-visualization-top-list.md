@@ -11,6 +11,11 @@ JSON schema for the `topList` visualizationTemplate object. The `visualizationTe
             "description": "Configuration for top list visualizations in Vega. Displays a ranked list of items, often with bars to represent values.",
             "type": "object",
             "properties": {
+                "fit": {
+                    "description": "How the chart sizes relative to its container. FitToContainer (default) fills both axes. FitHeight/FitWidth constrain one axis. Standard uses intrinsic size and scrolls if the chart is larger.",
+                    "type": "string",
+                    "enum": ["FitToContainer", "FitHeight", "FitWidth", "Standard"]
+                },
                 "key": {
                     "description": "The field to use for list item keys. Determines which data field's values will be used as item identifiers.",
                     "anyOf": [
@@ -285,6 +290,10 @@ JSON schema for the `topList` visualizationTemplate object. The `visualizationTe
                     "properties": {
                         "bandSize": {
                             "description": "The width of bars as a proportion of the available space. Controls the thickness of bars relative to the space between them.",
+                            "type": "number"
+                        },
+                        "itemHeight": {
+                            "description": "Pixel height of each list row. When set, the list uses FitWidth so rows stay that tall and the chart can scroll. Omit for Auto, which fits the list to the container.",
                             "type": "number"
                         }
                     }

@@ -11,6 +11,11 @@ JSON schema for the `changeOverTime` visualizationTemplate object. The `visualiz
             "description": "Configuration for change over time visualizations in Vega. Displays how values change between two points in time.",
             "type": "object",
             "properties": {
+                "fit": {
+                    "description": "How the chart sizes relative to its container. FitToContainer (default) fills both axes. FitHeight/FitWidth constrain one axis. Standard uses intrinsic size and scrolls if the chart is larger.",
+                    "type": "string",
+                    "enum": ["FitToContainer", "FitHeight", "FitWidth", "Standard"]
+                },
                 "x": {
                     "description": "The field to use for the time axis. Determines which data field's values will be used as time points.",
                     "anyOf": [

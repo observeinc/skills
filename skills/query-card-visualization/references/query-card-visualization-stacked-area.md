@@ -11,6 +11,11 @@ JSON schema for the `stackedArea` visualizationTemplate object. The `visualizati
             "description": "Configuration for stacked area chart visualizations in Vega. Displays multiple series of data stacked on top of each other with filled areas.",
             "type": "object",
             "properties": {
+                "fit": {
+                    "description": "How the chart sizes relative to its container. FitToContainer (default) fills both axes. FitHeight/FitWidth constrain one axis. Standard uses intrinsic size and scrolls if the chart is larger.",
+                    "type": "string",
+                    "enum": ["FitToContainer", "FitHeight", "FitWidth", "Standard"]
+                },
                 "x": {
                     "description": "The field to use for the X-axis. Determines which data field's values will be mapped to the X-axis.",
                     "anyOf": [
@@ -266,7 +271,7 @@ JSON schema for the `stackedArea` visualizationTemplate object. The `visualizati
                         },
                         "label": {
                             "type": "string",
-                            "description": "The display label for the axis. Use the field name used in the visualization binding \nfor the axis or a more descriptive short name that represents the values being plotted. Important: Do not\ninclude unit information."
+                            "description": "The display label for the axis. Use the field name used in the visualization binding\nfor the axis or a more descriptive short name that represents the values being plotted. Important: Do not\ninclude unit information."
                         },
                         "valueFormat": {
                             "description": "The formatting options for the axis values. Controls how values are displayed on the axis and in tooltips.",
@@ -275,72 +280,69 @@ JSON schema for the `stackedArea` visualizationTemplate object. The `visualizati
                                 "options": {
                                     "type": "object",
                                     "properties": {
-                                        "options": {
-                                            "type": "object",
-                                            "properties": {
-                                                "style": {
-                                                    "description": "The style of the number format. Determines the general form of the output. If metricUnit is present, this must be set to 'unit'",
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "const": "currency"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "unit"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "percent"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "decimal"
-                                                        }
-                                                    ]
+                                        "style": {
+                                            "description": "The style of the number format. Determines the general form of the output. If metricUnit is present, this must be set to 'unit'",
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "currency"
                                                 },
-                                                "metricUnit": {
-                                                    "description": "The metric unit (e.g. ns, bytes, etc), only provided if the input is a metric dataset \nand the relevant column has a metric unit. Otherwise this shouldn't be present.",
-                                                    "type": "string"
+                                                {
+                                                    "type": "string",
+                                                    "const": "unit"
                                                 },
-                                                "metricUnitPrecision": {
-                                                    "description": "The precision to use for the metric unit. Only valid if metricUnit is present.",
-                                                    "type": "number"
+                                                {
+                                                    "type": "string",
+                                                    "const": "percent"
                                                 },
-                                                "currency": {
-                                                    "description": "The currency to use for the format.",
-                                                    "type": "string"
-                                                },
-                                                "currencyDisplay": {
-                                                    "description": "The display style for the currency.",
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "const": "code"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "symbol"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "narrowSymbol"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "name"
-                                                        }
-                                                    ]
+                                                {
+                                                    "type": "string",
+                                                    "const": "decimal"
                                                 }
-                                            }
+                                            ]
                                         },
-                                        "locale": {
-                                            "description": "The i18n locale to use for formatting. If not provided, the browser locale is used.",
+                                        "metricUnit": {
+                                            "description": "The unit the value is in (e.g. ns, ms, bytes, KiB). Set it when the column has a\nmetric unit, or when the user asks for a unit. Recognized units are scaled for display (large ms values\nshow as seconds). Otherwise leave it unset.",
                                             "type": "string"
+                                        },
+                                        "isCustomUnit": {
+                                            "description": "Set to true when metricUnit is a free-form label (e.g. 'requests', 'users') rather than a measurement unit. The label is appended to the value as-is, without auto-scaling. Only valid if metricUnit is present.",
+                                            "type": "boolean"
+                                        },
+                                        "metricUnitPrecision": {
+                                            "description": "The precision to use for the metric unit. Only valid if metricUnit is present.",
+                                            "type": "number"
+                                        },
+                                        "currency": {
+                                            "description": "The currency to use for the format.",
+                                            "type": "string"
+                                        },
+                                        "currencyDisplay": {
+                                            "description": "The display style for the currency.",
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "code"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "symbol"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "narrowSymbol"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "name"
+                                                }
+                                            ]
                                         }
-                                    },
-                                    "required": ["options"],
-                                    "description": "The formatting options for the value. Controls how the value is displayed."
+                                    }
+                                },
+                                "locale": {
+                                    "description": "The i18n locale to use for formatting. If not provided, the browser locale is used.",
+                                    "type": "string"
                                 }
                             },
                             "required": ["options"]
@@ -481,7 +483,7 @@ JSON schema for the `stackedArea` visualizationTemplate object. The `visualizati
                         },
                         "label": {
                             "type": "string",
-                            "description": "The display label for the axis. Use the field name used in the visualization binding \nfor the axis or a more descriptive short name that represents the values being plotted. Important: Do not\ninclude unit information."
+                            "description": "The display label for the axis. Use the field name used in the visualization binding\nfor the axis or a more descriptive short name that represents the values being plotted. Important: Do not\ninclude unit information."
                         },
                         "valueFormat": {
                             "description": "The formatting options for the axis values. Controls how values are displayed on the axis and in tooltips.",
@@ -490,72 +492,69 @@ JSON schema for the `stackedArea` visualizationTemplate object. The `visualizati
                                 "options": {
                                     "type": "object",
                                     "properties": {
-                                        "options": {
-                                            "type": "object",
-                                            "properties": {
-                                                "style": {
-                                                    "description": "The style of the number format. Determines the general form of the output. If metricUnit is present, this must be set to 'unit'",
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "const": "currency"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "unit"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "percent"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "decimal"
-                                                        }
-                                                    ]
+                                        "style": {
+                                            "description": "The style of the number format. Determines the general form of the output. If metricUnit is present, this must be set to 'unit'",
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "currency"
                                                 },
-                                                "metricUnit": {
-                                                    "description": "The metric unit (e.g. ns, bytes, etc), only provided if the input is a metric dataset \nand the relevant column has a metric unit. Otherwise this shouldn't be present.",
-                                                    "type": "string"
+                                                {
+                                                    "type": "string",
+                                                    "const": "unit"
                                                 },
-                                                "metricUnitPrecision": {
-                                                    "description": "The precision to use for the metric unit. Only valid if metricUnit is present.",
-                                                    "type": "number"
+                                                {
+                                                    "type": "string",
+                                                    "const": "percent"
                                                 },
-                                                "currency": {
-                                                    "description": "The currency to use for the format.",
-                                                    "type": "string"
-                                                },
-                                                "currencyDisplay": {
-                                                    "description": "The display style for the currency.",
-                                                    "anyOf": [
-                                                        {
-                                                            "type": "string",
-                                                            "const": "code"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "symbol"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "narrowSymbol"
-                                                        },
-                                                        {
-                                                            "type": "string",
-                                                            "const": "name"
-                                                        }
-                                                    ]
+                                                {
+                                                    "type": "string",
+                                                    "const": "decimal"
                                                 }
-                                            }
+                                            ]
                                         },
-                                        "locale": {
-                                            "description": "The i18n locale to use for formatting. If not provided, the browser locale is used.",
+                                        "metricUnit": {
+                                            "description": "The unit the value is in (e.g. ns, ms, bytes, KiB). Set it when the column has a\nmetric unit, or when the user asks for a unit. Recognized units are scaled for display (large ms values\nshow as seconds). Otherwise leave it unset.",
                                             "type": "string"
+                                        },
+                                        "isCustomUnit": {
+                                            "description": "Set to true when metricUnit is a free-form label (e.g. 'requests', 'users') rather than a measurement unit. The label is appended to the value as-is, without auto-scaling. Only valid if metricUnit is present.",
+                                            "type": "boolean"
+                                        },
+                                        "metricUnitPrecision": {
+                                            "description": "The precision to use for the metric unit. Only valid if metricUnit is present.",
+                                            "type": "number"
+                                        },
+                                        "currency": {
+                                            "description": "The currency to use for the format.",
+                                            "type": "string"
+                                        },
+                                        "currencyDisplay": {
+                                            "description": "The display style for the currency.",
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "code"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "symbol"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "narrowSymbol"
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "name"
+                                                }
+                                            ]
                                         }
-                                    },
-                                    "required": ["options"],
-                                    "description": "The formatting options for the value. Controls how the value is displayed."
+                                    }
+                                },
+                                "locale": {
+                                    "description": "The i18n locale to use for formatting. If not provided, the browser locale is used.",
+                                    "type": "string"
                                 }
                             },
                             "required": ["options"]

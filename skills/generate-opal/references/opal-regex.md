@@ -98,22 +98,22 @@ The `~` operator on a body field leverages a **token index** for fast searches �
 
 ### How to check for token indexes
 
-The dataset's `## Fields` section in the knowledge graph context will explicitly mark indexed fields with a tag in square brackets (e.g. `[TokenIndex]`, `[SubstringIndex]`, `[EqualityIndex]`). Treat the absence of an explicit tag as "no index."
+DatasetSearch returns each dataset's schema in `fieldList`. Find the entry whose `name` is the body field and read its `indexDefs` array. The field is token-indexed only when `indexDefs` contains an entry with `"type": "TokenIndex"`:
 
-    ## Fields
-    body (varchar) [TokenIndex]: log message body  ← use ~ for fast search
-    timestamp (timestamp): event timestamp           ← no tag, do NOT use ~ on this field
+    {"name": "message", "type": {"tag": "String"}, "indexDefs": [{"field": "message", "type": "TokenIndex"}]}      ← use ~ for fast search
+    {"name": "trace_id", "type": {"tag": "String"}, "indexDefs": [{"field": "trace_id", "type": "EqualityIndex"}]}  ← not a token index, do NOT use ~
+    {"name": "timestamp", "type": {"tag": "Timestamp"}, "indexDefs": []}                                            ← no index, do NOT use ~
 
-If no `[TokenIndex]` tag is visible in the schema, assume the field is not indexed.
+If `indexDefs` is empty, missing, or has no `TokenIndex` entry, assume the field is not token-indexed and use `search()`.
 
 ### Operator choice by index availability
 
-| Body field index status                          | Substring search               | Regex/alternation search                                          |
-| :----------------------------------------------- | :----------------------------- | :---------------------------------------------------------------- |
-| **Default (no `[TokenIndex]` tag visible)**      | `search(string(body), "text")` | `match_regex(string(body), regex("error\|fail\|exception", "i"))` |
-| **Explicit `[TokenIndex]` tag visible on field** | `string(body) ~ "text"`        | `string(body) ~ /pattern/i`                                       |
+| Body field index status                      | Substring search               | Regex/alternation search                                          |
+| :------------------------------------------- | :----------------------------- | :---------------------------------------------------------------- |
+| **Default (no `TokenIndex` in `indexDefs`)** | `search(string(body), "text")` | `match_regex(string(body), regex("error\|fail\|exception", "i"))` |
+| **`TokenIndex` in the field's `indexDefs`**  | `string(body) ~ "text"`        | `string(body) ~ /pattern/i`                                       |
 
-The `~` operator has two forms (use only when `[TokenIndex]` is visible on the field):
+The `~` operator has two forms (use only when the field has a `TokenIndex` in its `indexDefs`):
 
 - **Plain string** (`~ "text"`) — **case-INSENSITIVE** substring match. Use `!~` for negation.
 - **Regex** (`~ /pattern/`) — case-sensitive by default. Add `i` flag for case-insensitive.
@@ -126,27 +126,27 @@ Combine multiple signals to catch errors regardless of log structure.
 
 **NEVER regex the body for HTTP status codes.** A pattern like `[^0-9](4[0-9]{2}|5[0-9]{2})[^0-9]` matches any three-digit number starting with 4 or 5 anywhere in the line, which on real log data means 43% of all rows at roughly 5% precision — `AppleWebKit/537.36` reads as a 5xx, as does a latency of `0.412` or `replicas 500`. It buries the keyword and severity signals it is OR'd with.
 
-To catch HTTP errors, filter the **status field** the dataset already has (`status_code`, `status`, `response_code` — check the schema's `## Fields` section):
+To catch HTTP errors, filter the **status field** the dataset already has (`status_code`, `status`, `response_code` — check the dataset's `fieldList`):
 
     filter int64(status_code) >= 400
 
 If the dataset has no status field, the keyword and severity signals below are the whole answer. A body scan for bare numbers is not a substitute.
 
-**CRITICAL: Default to `match_regex()` for the keyword alternation, NOT `~`.** Only use `~ /.../i` when the body field is explicitly marked `[TokenIndex]` in the schema's `## Fields` section.
+**CRITICAL: Default to `match_regex()` for the keyword alternation, NOT `~`.** Only use `~ /.../i` when the body field's `fieldList` entry has a `TokenIndex` in `indexDefs`.
 
-DEFAULT (no `[TokenIndex]` marker visible) — WITH `severity_number` in schema:
+DEFAULT (no `TokenIndex` in the body's `indexDefs`) — WITH `severity_number` in schema:
 
     filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i")) or severity_number >= 17
 
-DEFAULT (no `[TokenIndex]` marker visible) — WITHOUT `severity_number` in schema:
+DEFAULT (no `TokenIndex` in the body's `indexDefs`) — WITHOUT `severity_number` in schema:
 
     filter match_regex(string(body), regex("error|exception|fail|fatal|panic|critical", "i"))
 
-OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITH `severity_number` in schema:
+OPTIMIZED (body field HAS a `TokenIndex` in `indexDefs`) — WITH `severity_number` in schema:
 
     filter string(body) ~ /error|exception|fail|fatal|panic|critical/i or severity_number >= 17
 
-OPTIMIZED (body field IS explicitly marked `[TokenIndex]`) — WITHOUT `severity_number` in schema:
+OPTIMIZED (body field HAS a `TokenIndex` in `indexDefs`) — WITHOUT `severity_number` in schema:
 
     filter string(body) ~ /error|exception|fail|fatal|panic|critical/i
 
