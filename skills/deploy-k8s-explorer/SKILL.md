@@ -1,15 +1,14 @@
 ---
 name: deploy-k8s-explorer
 description: >-
-    End-to-end onboarding of a Kubernetes cluster to Observe — creates the
-    backend datastreams + content via the Observe CLI and deploys the
-    observe/agent helm chart. Use for ANY request to install or set up the
-    Observe Agent on Kubernetes, onboard a K8s cluster to Observe, or send
-    K8s data to Observe — across any flavor (EKS, GKE, AKS, GKE Autopilot,
-    EKS Fargate, EKS Auto Mode, minikube, kind, on-prem). Do NOT route a
-    Kubernetes onboarding request to a generic datastream-creation flow;
-    always orchestrate via this skill, which delegates to setup-k8s-backend
-    and setup-k8s-collection.
+    Deploys a from-scratch Kubernetes onboard to Observe (datastreams,
+    content, ingest token, and helm chart). Use this skill whenever the
+    user mentions onboarding a cluster or setting up Kubernetes in Observe
+    from scratch. Do not load setup-k8s-collection first; if datastreams
+    and an ingest token already exist, use setup-k8s-collection. Do not
+    load setup-k8s-backend for a full onboard — that skill is Observe-side
+    resources only (datastream, token, or backend objects with no agent
+    install).
 ---
 
 **MANDATORY:** Run `observe skill view deploy-k8s-explorer --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view deploy-k8s-explorer --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
@@ -243,7 +242,7 @@ Pass the following context:
 | Fargate service account mappings | Phase 1e (if Fargate)                                                                                                                                                                     |
 | Optional add-on selections       | Phase 1f (manifest ids + captured follow-ups; empty if none)                                                                                                                              |
 
-Skip the "Prerequisites to Gather" section of setup-k8s-collection and go directly to the matching platform flow, starting from "Step 1: Generate values file."
+Skip the "Prerequisites to Gather" section of setup-k8s-collection and go directly to the matching platform flow, starting from "Step 1: Generate values file." Collection's Step 5 owns application instrumentation (OTLP endpoints and the OpenTelemetry skill hand-off); do not ask that question again after Phase 4.
 
 ---
 
@@ -365,29 +364,3 @@ Read the `setup-k8s-collection` skill and follow its Uninstall Flow section. Thi
 ### Backend Resources
 
 The Observe CLI does not expose delete commands for datastreams, content packages, or ingest tokens — this is intentional, since removing them risks irreversible data loss. Direct the user to remove backend resources manually in the Observe UI.
-
----
-
-## Application Instrumentation (Optional)
-
-This skill stands up the cluster-side collection plane (datastreams, agent, OTLP gateway). Wiring individual application pods to emit OTLP is a separate concern. The agent exposes:
-
-| Endpoint                                                        | Protocol  | Use                                                         |
-| --------------------------------------------------------------- | --------- | ----------------------------------------------------------- |
-| `http://observe-agent-forwarder.observe.svc.cluster.local:4318` | OTLP HTTP | App SDKs that prefer HTTP, or auto-instrumentation defaults |
-| `http://observe-agent-forwarder.observe.svc.cluster.local:4317` | OTLP gRPC | App SDKs that prefer gRPC                                   |
-
-### Hand off
-
-- **Do not modify the application or its build/deploy pipeline yourself.** If a change is required, hand off to the appropriate skill so the user gets a complete, tested workflow rather than partial advice.
-- Ask the user whether they want to instrument an application now, set it up later, or just confirm what they already have:
-    - If they want to set up new instrumentation — refer them to `opentelemetry-auto-instrumentation`.
-    - If they already have OpenTelemetry instrumentation and want to verify it lands in Observe correctly — refer them to `opentelemetry-validation`.
-    - If they're not ready to instrument anything yet — exit; the cluster-side setup is complete and the OTLP endpoints will be ready whenever they are.
-
-| Skill                                | Description                                                                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `opentelemetry-auto-instrumentation` | Add OpenTelemetry to an existing app (auto-instrumentation for Java, Python, Node.js, .NET, Ruby)                         |
-| `opentelemetry-validation`           | Verify instrumentation is wired correctly and the expected spans, RED metrics, and runtime metrics are landing in Observe |
-
-> **Backend datastream prerequisite:** if `setup-k8s-backend` was not run with traces selected, the `Tracing/Span` and `Metrics/OpenTelemetry` datastreams won't exist and OTLP data will be accepted by the ingest endpoint but routed nowhere. Re-run `setup-k8s-backend` to add them before instrumenting the app.

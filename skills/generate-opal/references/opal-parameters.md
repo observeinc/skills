@@ -11,7 +11,7 @@ filter array_contains($paramId, #tagName) or is_null($paramId)
 ```
 
 - `$paramId` — the parameter, referenced with a leading `$`. It must already be declared before the OPAL is dry-run, or the reference fails to compile.
-- `#tagName` — the correlation tag to scope by. It **must be a correlation tag mapped on this card's own input dataset**, not just any tag that exists somewhere in the Knowledge Graph. A `#tag` that is not mapped on the input dataset still compiles, but the filter silently matches nothing and the preview comes back with a `tag "tagName" not found` warning. Pull from KG context; do NOT invent.
+- `#tagName` — the correlation tag to scope by. It **must be a correlation tag mapped on this card's own input dataset**, not just any tag that exists somewhere in the workspace. A `#tag` that is not mapped on the input dataset still compiles, but the filter silently matches nothing and the preview comes back with a `tag "tagName" not found` warning. Take it from that dataset's `correlationTags`; do NOT invent.
 - `or is_null($paramId)` — required. Without it, an unset (empty) parameter blanks the result.
 
 Place the filter line **immediately after the dataset-entry verb(s)** and BEFORE any `align` / `aggregate` / `timechart` — scope before you aggregate.

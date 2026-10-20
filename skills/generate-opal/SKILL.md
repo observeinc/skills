@@ -3,7 +3,9 @@ name: generate-opal
 description: >-
     Contains dataset kind selection, column selection rules, core syntax, and the skill index. NEVER
     generate OPAL, and NEVER invoke an opal-* reference, without first loading
-    this skill.
+    this skill. On the Observe CLI, inspect the schema with `observe dataset
+    list`/`view` and, when the caller wants a query run against a real
+    dataset, validate the pipeline with `observe query`.
 user-invocable: false
 ---
 
@@ -18,6 +20,7 @@ This skill provides core OPAL guidance for generating valid Observe OPAL pipelin
 1. Determine the dataset kind and interface for each data source (see Dataset Kinds below).
 2. **MANDATORY — STOP and load references NOW.** Consult the Skill Index below. You MUST read EVERY `opal-*` reference file that matches the dataset kind or query intent BEFORE writing any OPAL. Read files from `/skills/generate-opal/references/` (e.g., `cat /skills/generate-opal/references/opal-logs.md`). If multiple references match, read ALL of them. Do NOT proceed to step 3 until all matching references are loaded. Skipping this step leads to incorrect queries — references contain critical dataset-specific patterns, multi-dataset workflows, and syntax that this core skill does not cover.
 3. Write the OPAL pipeline using the syntax rules in this skill combined with the loaded domain skills.
+4. **On the CLI path, execute the pipeline when the caller wants a query run** against a real dataset. See [Execute and validate](#execute-and-validate). Leave the pipeline unrun when the caller asked for the text, or when the pipeline is a definition (parameters, dashboard pickers, monitor variables, `$paramId`). Do not require execution on the MCP / in-product path.
 
 ## References
 
@@ -42,6 +45,35 @@ When a query touches multiple domains, load ALL applicable references from the i
 
 ---
 
+## Execute and validate
+
+On the Observe CLI, when the caller wants a query run against a real dataset, inspect the schema, run `observe query`, and fix errors on the same dataset. Do not require execution on the MCP / in-product path. Leave the pipeline unrun when the caller asked for the text, or when the pipeline is a definition (parameters, dashboard pickers, monitor variables, `$paramId`).
+
+### CLI path (when `observe` is on PATH)
+
+This is the CLI counterpart of MCP dataset-search + generate-query-card.
+
+1. **Find the dataset and read its schema.** Use `observe dataset list` to resolve the id, then `observe dataset view <id> --json` for field names, kind, and interface. Do not guess columns.
+2. **Run the pipeline** when the caller wants a query run against a real dataset. `observe query -i <dataset-id> -p "<pipeline>" --json` (add `--interval` / `--start` / `--end` as needed). Always `--json`.
+3. **On schema or compile errors**, fix the pipeline on the **same** dataset and re-run. A syntax error does not mean the dataset is wrong.
+4. **On timeout / execution errors**, narrow the time window first, then try an alternate dataset from `observe dataset list`.
+
+When the caller wants a query run against a real dataset, execute it with `observe query` before returning it. Leave the pipeline unrun when the caller asked for the text, or when the pipeline is a definition (parameters, dashboard pickers, monitor variables, `$paramId`).
+
+```bash
+observe dataset list --match <name> --json
+observe dataset view <dataset-id> --json
+observe query -i <dataset-id> -p "<pipeline>" --json
+```
+
+If the `observe-cli` skill is available, load it for flag details (`--match`, `--query`, `--correlation-tag-*`, time window).
+
+### In-product / MCP path
+
+Use knowledge-graph dataset and metric tools to inspect the schema. Do not require executing the pipeline on this path. generate-query-card / GetQueryCard produce a card when the caller asked for one; they are not a mandate to run every pipeline.
+
+---
+
 ## Dataset Kinds — How to Choose
 
 | Kind     | Interface | What it stores                                      | Aggregation verb                                                               |
@@ -56,7 +88,7 @@ When a query touches multiple domains, load ALL applicable references from the i
 
 ## Column Selection — Keep Output Compact
 
-Results are consumed by an LLM with limited context. Always use pick_col to return only the columns needed.
+Results are consumed by an LLM with limited context. Use `pick_col` to keep only the business columns the question needs. Temporal columns and primary keys are not optional business columns: the compiler rejects a `pick_col` that drops one the dataset kind requires, even when the user did not ask for that column.
 
 | User asks…                     | Output shape          | Example                                               |
 | :----------------------------- | :-------------------- | :---------------------------------------------------- |
@@ -65,22 +97,30 @@ Results are consumed by an LLM with limited context. Always use pick_col to retu
 | "How many errors per service?" | Name + count          | `statsby error_count:count(), group_by(service_name)` |
 
 - **Aggregation queries**: Output columns are already minimal — no pick_col needed.
-- **Row-level queries**: ALWAYS use pick_col before `sort`. Include `limit 100` for non-aggregation queries.
+- **Row-level queries**: use `pick_col` before `sort`, and apply the kind rule below in that same verb. Include `limit 100` for non-aggregation queries. If the dataset kind is unknown, skip `pick_col` — extra columns are harmless, a dropped temporal column is a compiler error.
 - **Prefer aggregation over raw rows** when the question can be answered with counts/averages/percentiles.
 - **`pick_col` is destructive** — only listed columns survive. Downstream verbs can ONLY reference columns in `pick_col`.
 - **pick_col only accepts top-level column references.** Nested fields cause errors — extract with `make_col` first.
 - **Column names with spaces** need `@."Column Name"` quoting (NOT `"Column Name"` which is a string literal).
 - **Primary key columns** from the schema's `primaryKey` array are MANDATORY in `pick_col`.
-- **Temporal columns** are MANDATORY in `pick_col` whenever `pick_col` is used.
+- **Temporal columns are chosen by dataset kind**, not by inspecting a display name and not by copying whatever the last example projected. Do not put `validFromField` / `validToField` names (`timestamp`, `BUNDLE_TIMESTAMP`, `Valid From`, `Valid To`, `end_time`) in `pick_col`. Project the functions with a required alias. A bare `pick_col row_start_time()` or `pick_col row_end_time()` is invalid.
 
-    - **Valid-from**: use the `row_start_time()` function with a required output alias in `pick_col` (e.g. `pick_col valid_from:row_start_time(), ...`). A bare `pick_col row_start_time()` is invalid. The function always resolves to the dataset's valid-from column without you needing to know its name, and satisfies the requirement on any temporal dataset (Event, Interval, Resource; returns null on Tables). Prefer this over hardcoding a guessed name like `timestamp`, `BUNDLE_TIMESTAMP`, or `@."Valid From"`.
-    - **Valid-to**: if the dataset has a valid-to column (`validToField` is set — Resource and Interval kinds), you MUST also include it. Use the `row_end_time()` function with a required output alias in `pick_col` (e.g. `pick_col valid_to:row_end_time(), ...`), symmetric with `row_start_time()` for valid-from. A bare `pick_col row_end_time()` is invalid. Like `row_start_time()`, it resolves to the dataset's valid-to column without you needing to know its name. Prefer this over hardcoding a guessed name like `end_time` or `@."Valid To"`.
-    - **`statsby` is non-temporal** — it consumes the input's `valid_from`/`valid_to` and produces a Table. Do NOT add `valid_from:row_start_time()` or `valid_to:row_end_time()` to a `pick_col` that follows `statsby`; those columns no longer exist and the query will fail with `the field "<name>" does not exist among fields [...]`. After `statsby`, `pick_col` may include only the group-by and aggregate output columns.
-    - **After `align`/`aggregate`** (the metric verb), temporal columns DO persist — if you add `pick_col` after aggregation you MUST include them with aliases (e.g. `valid_from:row_start_time()`, `valid_to:row_end_time()`). If you omit `pick_col` entirely, temporal columns are retained automatically.
+| Kind                        | `pick_col` must include                                         | Do not include                                                         |
+| :-------------------------- | :-------------------------------------------------------------- | :--------------------------------------------------------------------- |
+| Event                       | `valid_from:row_start_time()`                                   | any valid-to projection — Event has no valid-to column                 |
+| Interval                    | `valid_from:row_start_time()` and `valid_to:row_end_time()`     | —                                                                      |
+| Resource                    | `valid_from:row_start_time()` and `valid_to:row_end_time()`     | —                                                                      |
+| Table                       | neither                                                         | either function                                                        |
+| after `statsby`             | neither — the output is a Table                                 | either function — those columns no longer exist                        |
+| after `align` / `aggregate` | the columns that verb already named `valid_from` and `valid_to` | a second `valid_from:` / `valid_to:` alias — those names already exist |
 
-        WRONG: pick_col row_start_time(), span_name, dur_ms, status_message, trace_id
-        WRONG: pick_col span_name, dur_ms, status_message, trace_id
-        CORRECT: pick_col valid_from:row_start_time(), valid_to:row_end_time(), span_name, dur_ms, status_message, trace_id
+Interval and Resource always have a valid-to column. Projecting valid-from alone does not satisfy the compiler; the failure is `need to pick 'valid to' column`. Event never has a valid-to column, so a valid-to projection there is not a way to be safe. `statsby` drops both. After `align` / `aggregate`, keep the `valid_from` and `valid_to` columns that verb already produced — that bare-name form is only for that output, never for an Event, Interval, or Resource input.
+
+        WRONG (Interval or Resource, valid-to omitted): pick_col valid_from:row_start_time(), name, status
+        WRONG (bare function): pick_col row_start_time(), name, status
+        WRONG (schema display name): pick_col @."Valid From", @."Valid To", name
+        CORRECT (Interval or Resource): pick_col valid_from:row_start_time(), valid_to:row_end_time(), name, status
+        CORRECT (Event): pick_col valid_from:row_start_time(), severity_text, body
 
         Post-`statsby` (non-temporal) — temporal columns are GONE; do not add them:
 
@@ -90,7 +130,7 @@ Results are consumed by an LLM with limited context. Always use pick_col to retu
 
 - **Resource kind datasets** do NOT support `limit` — use `topk` instead. Table, Event, and Interval datasets DO support `limit`.
 - **`topk`/`bottomk`** require aggregate scoring: `topk 20, max(col)`. Never pass a bare column.
-- **ALWAYS use field names from the dataset schema — NEVER assume field names.**
+- **ALWAYS use field names from the dataset schema — NEVER assume field names.** Temporal columns are the exception: project them with the kind rule above, never by copying the schema's temporal display name.
 
 ---
 
@@ -108,12 +148,12 @@ Time filtering is handled by the query's time range, not by OPAL. Never filter o
 
 **ALWAYS use these functions whenever you reference a row's valid-from or valid-to value** — i.e. the dataset's `validFromField` / `validToField` (or any equivalent temporal value). NEVER hardcode or guess the per-dataset column name (`timestamp`, `BUNDLE_TIMESTAMP`, `start_time`, `end_time`, `@."Valid From"`, `@."Valid To"`, etc.). The functions resolve to the correct column on any dataset kind, so you never need to know its schema name.
 
-- `row_start_time()` → the dataset's **valid-from** value (null on Table kind). In `pick_col`, it MUST have an output alias such as `valid_from:row_start_time()`; the alias binds the output's valid-from column and satisfies the mandatory valid-from requirement.
-- `row_end_time()` → the dataset's **valid-to** value (null on Event/Table kinds). In `pick_col`, it MUST have an output alias such as `valid_to:row_end_time()`; the alias binds the output's valid-to column and satisfies the mandatory valid-to requirement.
+- `row_start_time()` → the dataset's **valid-from** value (null on Table kind). In `pick_col` on Event, Interval, and Resource, project it as `valid_from:row_start_time()`.
+- `row_end_time()` → the dataset's **valid-to** value. Interval and Resource have one; Event and Table do not. In `pick_col` on Interval and Resource, project it as `valid_to:row_end_time()`. Do not add it on Event or Table.
 
-Both functions require `alias:function()` form in `pick_col`; bare forms such as `pick_col row_start_time()` and `pick_col row_end_time()` are invalid. You never need to reference a temporal column by its schema name, even in `pick_col`. The functions work directly in value expressions and sort direction functions when the dataset has the corresponding temporal column: `sort desc(row_start_time())` is valid on temporal datasets, and `sort asc(row_end_time())` is valid on Resource and Interval datasets.
+Which of the two a `pick_col` includes is decided by dataset kind (see Column Selection), not by whether the question asked for a time column. Bare `pick_col row_start_time()` / `pick_col row_end_time()` are invalid, and so is copying the schema display name. The functions work directly in value expressions and sort direction functions when the dataset has the corresponding temporal column: `sort desc(row_start_time())` is valid on temporal datasets, and `sort asc(row_end_time())` is valid on Resource and Interval datasets.
 
-Examples: `make_col age:now() - row_start_time()`, `pick_col valid_from:row_start_time(), valid_to:row_end_time(), ...`, `sort desc(row_start_time())`.
+Examples: `make_col age:now() - row_start_time()`, `pick_col valid_from:row_start_time(), body` on an Event, `pick_col valid_from:row_start_time(), valid_to:row_end_time(), name` on an Interval or Resource, `sort desc(row_start_time())`.
 
 ### Cast before operating
 
@@ -294,10 +334,13 @@ Negated function predicates (`not contains`, `not match_regex`, `not starts_with
 
 ### String matching — function syntax, no infix operators
 
-- **Substring match** — `contains(col, "text")`
+- **Substring match (containment test)** — `contains(col, "text")`
 - **Glob search** — `col ~ "pattern*"`
 - **Regex match** — `match_regex(col, regex("pattern"))`
 - **Multi-term search** — `search(col, "term")`
+- **Extract a substring by position** — `substring(str, start [, length])`, 0-based `start`. There is NO `substr` function in OPAL.
+- **Find the index of a substring** — `position(haystack, needle [, start])`, 0-based, returns `-1` when not found. There is NO `strpos` function in OPAL.
+- **Extract via regex capture groups** — `extract_regex` is a **verb** (pipeline stage), NOT a function; it cannot be called inside `make_col` or any expression. Need one matched value inline in an expression instead? Use `get_regex(col, /pattern/)`. Need named columns from capture groups? Use the verb form — see [opal-regex](references/opal-regex.md).
 
 All OPAL regex is **POSIX ERE plus the Perl backslash shorthands** (NOT full PCRE). `\d`, `\w`, `\s`, `\b` and non-greedy quantifiers (`*?`, `+?`) all work; POSIX classes like `[[:space:]]` work too. What does not exist: lookahead `(?=`, lookbehind `(?<=`, backreferences `\1`. Also NEVER use inline flag groups `(?i)`/`(?m)`/`(?s)` or non-capturing groups `(?:...)` — RE2 accepts them so they compile, but Snowflake's `REGEXP_LIKE`/`RLIKE` rejects them at execution (`no argument for repetition operator: ?`), which crashes `match_regex`/`~` on substring-indexed columns; use a slash-suffix/flag argument for case-insensitivity and a plain group `(...)` instead of `(?:...)`. Never use `[[:<:]]`/`[[:>:]]` for word boundaries — that is MySQL syntax and Snowflake rejects it; use `\b`. For full regex reference, load [opal-regex](references/opal-regex.md).
 
@@ -312,38 +355,40 @@ All OPAL regex is **POSIX ERE plus the Perl backslash shorthands** (NOT full PCR
 - **Metrics use `align` and metric functions.** Exception: datasets with `OBSERVATION_KIND` or `FIELDS` — use `timechart`/`statsby`.
 - **Dataset field naming varies.** OTel uses `attributes."..."`, Prometheus uses `labels."..."`, AWS uses `FIELDS."..."`. Always check the schema.
 - **Reference datasets by input name.** In join verbs, use `@"inputName"` matching `inputs` — never raw dataset IDs. `@"…"` is never a timestamp literal — use `parse_isotime(...)`.
-- **Only use documented functions.** OPAL function names may differ from other languages (e.g., `decode_base64` not `base64_decode`, `concat_strings` not `concat`). If unsure whether a function exists, don't guess — use documented alternatives or describe the transform needed.
+- **Only use documented functions.** OPAL function names may differ from other languages (e.g., `decode_base64` not `base64_decode`, `concat_strings` not `concat`, `substring`/`position` not `substr`/`strpos`, and `extract_regex` is a verb, never a callable function). If unsure whether a function exists, don't guess — use documented alternatives or describe the transform needed.
 
 ---
 
 ## Using Dataset Context
 
-1. **Correlation tags** — key-value pairs for filtering and grouping. The `related` field on each tag result lists connected metrics and datasets. Use `correlationTagMappings` to verify that the selected input dataset maps the tag, then prefer native `#tag` syntax (e.g., `filter #k8s.cluster.name = "prod"` or `group_by(#"service.name")`). Native tag references resolve and coalesce every mapped backing path, so use them only when that coalesced concept matches the user's requested dimension. If multiple mappings represent distinct semantic roles such as caller versus downstream service, select the role-specific physical mapped path instead. Do not reconstruct a single-role mapped tag with `make_col`. Quote tag names with `#"..."` when needed. A direct tag grouping produces a normalized output column (`#k8s.cluster.name` becomes `k8s_cluster_name`) for downstream verbs. Use a physical path when the dimension is not exposed as a correlation tag or when the query needs one specific mapping.
-2. **Dataset schemas** — use `## Fields` / `columnStats` to pick datasets, identify columns, and verify field names. Dimension field names vary by dataset (`tags`, `resource_attributes`, `labels`, `FIELDS`) — always check the schema.
-3. **Metrics** — use the `tags` field in `heuristics` to discover available filtering/grouping dimensions. Confirm the metric supports the dimensions the query needs before writing the pipeline.
+1. **Correlation tags** — key-value pairs for filtering and grouping. CorrelationTagValueSearch returns only tag/value pairs; to find datasets whose rows contain one, pass that hit's key and value to DatasetSearch as `containsTag: {key, value}`. Whether a dataset maps a tag is a separate question, answered by its `correlationTags` array: check the selected input dataset's `correlationTags` (entries shaped `{tag, path: {field, path}}`) to verify it maps the tag, then prefer native `#tag` syntax (e.g., `filter #k8s.cluster.name = "prod"` or `group_by(#"service.name")`). Native tag references resolve and coalesce every mapped backing path, so use them only when that coalesced concept matches the user's requested dimension. If multiple entries represent distinct semantic roles such as caller versus downstream service, select the role-specific physical mapped path instead. Do not reconstruct a single-role mapped tag with `make_col`. Quote tag names with `#"..."` when needed. A direct tag grouping produces a normalized output column (`#k8s.cluster.name` becomes `k8s_cluster_name`) for downstream verbs. Use a physical path when the dimension is not exposed as a correlation tag or when the query needs one specific mapping.
+2. **Dataset schemas** — DatasetSearch returns each dataset's columns in `fieldList` (each entry has `name`, `type`, and `indexDefs`), plus `validFromField`, `validToField`, `primaryKey`, and `interfaces`. Use `fieldList[].name` to pick datasets, identify columns, and verify exact field names, including case. Dimension field names vary by dataset (`tags`, `resource_attributes`, `labels`, `FIELDS`) — always check the schema, never assume a conventional name.
+    - **No `fieldList` in context, no OPAL.** A dataset ID you got from a memory, a monitor, a metric result, or an earlier query card does not come with its schema. Call DatasetSearch with `datasetIds: ["<id>"]` to get its `fieldList` before writing OPAL against it.
+3. **Metrics** — use the `tags` field in `heuristics` to discover available filtering/grouping dimensions. Its entries are `{column, path}` with `path` a plain string, not the `{field, path}` object in `correlationTags`. Confirm the metric supports the dimensions the query needs before writing the pipeline.
 
 ## ⚠ Frequent Errors — Check These First
 
 These are the most common OPAL generation mistakes. Verify NONE of them apply before submitting.
 
-1. **`pick_col` missing or failing to alias temporal columns.** Every `pick_col` MUST retain the dataset's temporal columns — UNLESS the immediately-preceding verb is `statsby` (which is non-temporal and drops them). Use the required aliased forms `valid_from:row_start_time()` for valid-from and `valid_to:row_end_time()` for valid-to (Resource/Interval). Bare `row_start_time()` or `row_end_time()` entries are invalid. When in doubt, omit `pick_col` entirely (all columns are kept).
+1. **`pick_col` drops a temporal column the kind requires.** Decide from dataset kind. Event: `valid_from:row_start_time()` only. Interval and Resource: both `valid_from:row_start_time()` and `valid_to:row_end_time()` — valid-from alone still fails with `need to pick 'valid to' column`. After `statsby`, include neither. After `align` / `aggregate`, keep the existing `valid_from` and `valid_to` columns. Bare functions and schema display names (`@."Valid To"`, `timestamp`) do not count. When the kind is unknown, omit `pick_col`.
 2. **`pick_col` with temporal columns after `statsby`.** `statsby` consumes temporal columns and outputs a Table. The post-`statsby` schema has only group-by and aggregate output columns — referencing `valid_from`/`valid_to` here fails with `the field "<name>" does not exist among fields [...]`.
 3. **SQL-style sort direction.** `sort col DESC` is invalid — use `sort desc(col)`.
 4. **Filtering on valid-to to get current state.** NEVER write `filter is_null(row_end_time())` or `filter is_null(@."Valid To")` — it almost always returns zero rows on Resource datasets. For "currently in state X", use `filter_last <state predicate>` (last-value semantics), not plain `filter`, and compute durations with `coalesce(row_end_time(), now())`. See [opal-resource-datasets](references/opal-resource-datasets.md).
 5. **`visualizationTemplate.lineChart.x` mismatch.** This field references the OUTPUT column name in the schema, NOT the OPAL function. `timechart` produces `_c_valid_from`; `align` (with or without `aggregate`) produces `valid_from`. Mixing them up fails with `references column 'X' which does not exist in the schema. Available fields: ...`. NEVER use `row_start_time()` here.
 6. **`group_by(name:string(name))` overwrite.** Casting a bare column to itself collides with the existing column. FAILS with `attempting to overwrite existing column "<name>"`. Either rename (`fn:string(functionName)`) or drop the cast when the column is already a string (`group_by(functionName, region)`).
 7. **Blindly `make_event`-ing a Resource dataset.** Do NOT add `make_event` (or any `make_*` conversion) as a routine or first step on a Resource. Query the Resource directly — `filter`, `filter_last`/`ever`/`always`/`never`, `make_col`, `statsby`, `timechart`, and `topk` all operate on Resources natively (none of the worked examples convert first). A blind `make_event` explodes each entity's state history into per-update rows, which double-counts entities and breaks current-state and duration logic. Convert only when the question is specifically about state _transitions_ (one row per change), or a downstream verb strictly requires a different kind. See [opal-resource-datasets](references/opal-resource-datasets.md).
+8. **Guessing SQL/Python-style string functions.** OPAL has no `substr` or `strpos`. Use `substring(str, start [, length])` (0-based `start`) and `position(haystack, needle [, start])` (returns `-1` if not found). `extract_regex` is a verb, not a function — it cannot appear inside `make_col` or any other expression; use `get_regex(col, /pattern/)` for an inline single match.
 
 ---
 
 ## Validation Checklist
 
-Before returning the pipeline, verify:
+Before returning the pipeline, verify the items below. On the CLI path, when the caller wants a query run against a real dataset, also execute it with `observe query`. Do not require execution on the MCP path, or when the caller asked for the pipeline text, or when the pipeline is a definition (parameters, dashboard pickers, monitor variables, `$paramId`). Then verify:
 
 - **Per-dataset field verification**: For EACH expression, confirm every referenced field exists in THAT dataset's schema. Do not reference fields from other datasets — field names vary (`tags` vs `resource_attributes` vs `labels` vs `FIELDS`).
 - All column names after aggregation (`statsby`/`aggregate`) reference **output columns**, not original field paths
 - All column names after `pick_col` appear in the `pick_col` list
-- **CRITICAL**: `pick_col` retains temporal columns whenever `pick_col` is used — including after `align`/`aggregate` — plus ALL `primaryKey` columns, EXCEPT after `statsby`, which is non-temporal and drops them. Use aliased expressions such as `valid_from:row_start_time()` and `valid_to:row_end_time()`; bare function calls in `pick_col` are invalid. If unsure which columns are temporal, omit `pick_col` entirely.
+- **CRITICAL**: `pick_col` follows the kind table in Column Selection, and it retains every `primaryKey` column. Event projects valid-from only. Interval and Resource project both temporal aliases. After `statsby`, project neither. After `align` / `aggregate`, keep the existing `valid_from` and `valid_to` names. If the kind is unknown, omit `pick_col`.
 - `float64()` wraps division operands to prevent integer truncation
 - Output alias names (from `align`, `group_by`, `extract_regex`, `statsby`) do not collide with existing schema column names or other output names in the same verb
 - `case()` uses strictly paired `(condition, result)` arguments — default uses `true, value`, never a bare trailing value
@@ -351,3 +396,4 @@ Before returning the pipeline, verify:
 - Every function used exists in OPAL — use only documented functions; for duration functions load [opal-duration](references/opal-duration.md)
 - Resource datasets use `topk` (never `limit`) and retain BOTH temporal columns in `pick_col` with required aliases — e.g. `valid_from:row_start_time()` and `valid_to:row_end_time()` — and NEVER filter on valid-to (`filter is_null(row_end_time())` / `filter is_null(@."Valid To")`)
 - When filtering on ambiguous values (e.g., "us west", "prod"), never guess exact values — use partial-match functions like `starts_with()`, `contains()`, or `match_regex()`
+- No SQL/Python-style string-function guesses (`substr`, `strpos`) and no function-call use of `extract_regex` (it is a verb)

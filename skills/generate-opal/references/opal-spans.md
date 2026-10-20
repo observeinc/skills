@@ -124,7 +124,7 @@ When users ask about traces, spans, and especially **span events**, follow this 
     - **Span Event dataset** (e.g., "Tracing/Span Event") — in-span events like exceptions, logs, annotations
     - **Trace dataset** (e.g., "Tracing/Trace") — trace-level summaries
 
-2. **If the user mentions "span events"**, you **must** query the Span Event dataset. Span events are NOT part of the Span dataset.
+2. **If the user mentions "span events"**, you **must** query the Span Event dataset in its own GetQueryCard. Span events are NOT part of the Span dataset. Do not `union` spans and span events, and do not `make_event` a span query in order to mix them. `make_event` on an Interval fails with `need to pick 'valid to' column "end_time"` once `pick_col` has dropped `end_time`.
 
 3. **Typical flow:** Find spans matching criteria → identify traces → query span events using `trace_id` or `span_id`.
 

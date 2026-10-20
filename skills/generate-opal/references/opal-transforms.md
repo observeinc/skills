@@ -127,8 +127,8 @@ OPAL function names do NOT follow other languages. Use `decode_base64` not `base
 - `upper(str)` / `lower(str)` — Case conversion.
 - `trim(str)` / `ltrim(str)` / `rtrim(str)` — Remove whitespace (leading, trailing, or both).
 - `left(str, n)` / `right(str, n)` — Leftmost/rightmost n characters.
-- `substring(str, start [, length])` — Extract substring (1-based start index).
-- `position(haystack, needle)` — Find first occurrence index (0 if not found).
+- `substring(str, start [, length])` — Extract substring. `start` is 0-based; negative `start` counts from the right. There is NO `substr` function in OPAL.
+- `position(haystack, needle [, start])` — Find first occurrence index, 0-based; returns `-1` when not found. Optional `start` sets the search offset. There is NO `strpos` function in OPAL.
 - `replace(str, old, new)` — Replace all occurrences of substring.
 - `replace_regex(str, pattern, replacement)` — Replace all regex matches.
 - `split_part(str, delimiter, part)` — Split and return Nth part (1-based).
@@ -204,7 +204,8 @@ Cast the value column: `float64(value)` since it holds variant values.
 
 Preserving context:
 
-    pick_col valid_from, host, cpu_usage, mem_usage, disk_usage
+    // Event input: valid-from only. Do not copy this shape onto an Interval or Resource.
+    pick_col valid_from:row_start_time(), host, cpu_usage, mem_usage, disk_usage
     unpivot "metric", "val", cpu_usage, mem_usage, disk_usage
     statsby avg_val:avg(float64(val)), group_by(host, metric)
 

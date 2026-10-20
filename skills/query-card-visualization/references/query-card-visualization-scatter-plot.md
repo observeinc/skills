@@ -11,6 +11,11 @@ JSON schema for the `scatterPlot` visualizationTemplate object. The `visualizati
             "description": "Configuration for scatter plot visualizations in Vega. Displays data points on a cartesian coordinate system with customizable point properties.",
             "type": "object",
             "properties": {
+                "fit": {
+                    "description": "How the chart sizes relative to its container. FitToContainer (default) fills both axes. FitHeight/FitWidth constrain one axis. Standard uses intrinsic size and scrolls if the chart is larger.",
+                    "type": "string",
+                    "enum": ["FitToContainer", "FitHeight", "FitWidth", "Standard"]
+                },
                 "x": {
                     "description": "The field to use for the X-axis. Determines which data field's values will be mapped to the X-axis.",
                     "anyOf": [

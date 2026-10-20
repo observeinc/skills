@@ -1,29 +1,44 @@
 ---
 name: observe-cli
 description: >-
-    Use the Observe CLI (`observe`) to investigate production systems and
-    pull telemetry. Reach for this skill whenever the user
-    wants to: search or tail logs; query metrics (CPU, memory, latency,
-    error rate, request volume, custom app metrics); explore traces and
-    spans; correlate events across services, hosts, containers, or
-    Kubernetes resources; investigate or triage alerts (what fired, why,
-    what's still active, related signals); debug an incident or production
-    issue; check service or system health; compare service RED metrics or
-    dependencies; figure out what's happening with
-    a customer, deployment, or user; find which services emit a given tag
-    or label; slice production data by service, environment, region, host,
-    pod, status code, etc.; or pull any observability data out of the
-    platform for analysis, dashboards, or scripting. Also covers the
-    underlying primitives the CLI exposes (datasets, OPAL queries, tag
-    search, alerts, AI agent skills, auth) when the user asks about them
-    directly.
+    Use the Observe CLI (`observe`) to investigate production
+    systems and pull telemetry. Load this skill — do not grep a source
+    checkout — whenever the user wants to: search or tail logs; query
+    metrics; explore traces and spans; correlate events across services,
+    hosts, containers, or Kubernetes resources; investigate or triage
+    alerts; debug an incident or production issue; check service or
+    system health; compare service RED metrics or dependencies; figure
+    out what's happening with a customer, deployment, or user; find
+    which services emit a given tag or label; slice production data by
+    service, environment, region, host, pod, status code, etc.; find
+    which dataset / dataset schema; ask who calls X / what does X call /
+    invocation graph; write or run OPAL; list monitors; or pull any
+    observability data out of the platform for analysis, dashboards, or
+    scripting. Also covers datasets, OPAL queries, tag search, alerts,
+    AI agent skills, and auth.
 ---
 
 **MANDATORY:** Run `observe skill view observe-cli --content 2>/dev/null` before proceeding to load the latest version of this skill. When the skill points you to a supporting file, load it with `observe skill view observe-cli --path <relative-path> 2>/dev/null`. Ignore errors and fall back to the file contents.
 
 # Observe CLI
 
-The Observe CLI (`observe`) is a typed, scriptable interface to the Observe
+Run `observe auth status --json`. When that reports not authenticated,
+run `observe auth login`. Harbor sandboxes are often already logged in;
+a customer session, or a trial whose token expired, is not.
+
+The CLI is the counterpart of the MCP dataset-search,
+get-apm-invocation-graph, and generate-query-card tools. A source
+checkout is not tenant data — do not answer production, dataset, or
+"what does X call" questions by grepping the repo. Use `observe` for
+those. Commands: `observe dataset list|view`, `observe apm
+invocation-graph`, `observe query`. Always `--json`.
+
+Typical asks also include metrics such as CPU, memory, latency, error
+rate, request volume, and custom app metrics; triaging alerts (what
+fired, why, what's still active, related signals); and an invocation
+graph in prod.
+
+The Observe CLI is a typed, scriptable interface to the Observe
 platform. Reach for it whenever the user wants to:
 
 - Discover **datasets**, **metrics**, or **alerts** by name, tag, or filter

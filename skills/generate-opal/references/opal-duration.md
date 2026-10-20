@@ -87,7 +87,7 @@ On Resource datasets, do NOT filter on valid-to (`filter is_null(row_end_time())
     make_col age:coalesce(row_end_time(), now()) - row_start_time()
     filter age > 30d
     make_col age_days:to_hours(age) / 24
-    pick_col @."Valid From":row_start_time(), @."Valid To":row_end_time(), name, age_days
+    pick_col valid_from:row_start_time(), valid_to:row_end_time(), name, age_days
     topk 100, max(age_days)
 
 ### Elapsed time since last update
@@ -129,10 +129,11 @@ On Resource datasets, do NOT filter on valid-to (`filter is_null(row_end_time())
     make_col hour:int64(format_time(row_start_time(), "HH24"))
 
 Format tokens use **Snowflake conventions** (NOT strftime): `YYYY`, `MM`, `DD`, `HH24`, `MI`, `SS`, `AM`/`PM`, `DY`, `MON`.
-There is **no** `strftime()` or `minute()` function.
+There is **no** `strftime()`, `minute()`, or `get_minute()` function.
 
     WRONG:   make_col min_of_hour:int64(strftime(row_start_time(), "%M"))
     WRONG:   make_col min_of_hour:int64(minute(row_start_time()))
+    WRONG:   make_col min_of_hour:get_minute(row_start_time())
     WRONG:   make_col min_of_hour:mod(int64(row_start_time()) / 60000000000, 60)
     CORRECT: make_col min_of_hour:int64(format_time(row_start_time(), "MI"))
 
@@ -151,7 +152,8 @@ There is **no** `strftime()` or `minute()` function.
 
 ## Common Pitfalls
 
-- Using `strftime()` or `minute()` → those functions do not exist. Extract clock fields with `format_time(row_start_time(), "MI")` / `"HH24"` (Snowflake tokens, not `%M`)
+- Using `strftime()`, `minute()`, or `get_minute()` → those functions do not exist. Extract clock fields with `format_time(row_start_time(), "MI")` / `"HH24"` (Snowflake tokens, not `%M`)
+- Using `%` for modulo → parse error. There is no `%` operator. Use `format_time(..., "MI")` for minute-of-hour
 - Dividing `int64(row_start_time())` by `60000000000` to get minute-of-hour → type error. Use `format_time(..., "MI")`
 - Using strftime format (`%Y-%m-%d`) → use Snowflake format: `YYYY-MM-DD`
 - Comparing duration to number → compare durations: `elapsed > duration_sec(5)` not `elapsed > 5`

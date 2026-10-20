@@ -82,7 +82,7 @@ Use these instead of multi-step `filter` + `statsby` patterns when the question 
 
 ## Resource Dataset Checklist (verify before every Resource query)
 
-1. **BOTH temporal columns in `pick_col`**: Use aliased expressions such as `valid_from:row_start_time()` and `valid_to:row_end_time()`. Omitting either or using a bare function call will cause an error.
+1. **BOTH temporal columns in `pick_col`**: Every Resource `pick_col` includes `valid_from:row_start_time()` and `valid_to:row_end_time()`. Valid-from alone still fails with `need to pick 'valid to' column`. A bare function or the schema display name (`@."Valid To"`) does not count.
 2. **ALL `primaryKey` columns in `pick_col`**: Check the schema's `primaryKey` array and include every column listed.
 3. **`topk` instead of `limit`**: Resource datasets reject `limit` — error: `"limit" does not support Resource kind input, use "topk" instead`. Always use `topk N, max(col)` with an aggregate scoring function.
 4. **`topk` requires aggregate scoring**: `topk 20, max(col)` — never `topk 20, col` (bare column is invalid).

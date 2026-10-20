@@ -9,7 +9,7 @@
     - `type` = `"tdigest"` → `m_tdigest("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
     - `type` = `"histogram"` → `m_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
     - `type` = `"exponentialHistogram"` → `m_exponential_histogram("metric_name")` with `histogram_combine()` (DOUBLE COMBINE pattern)
-4. **Resolve dimensions through correlation tags first.** Check the selected dataset's `correlationTagMappings`. When the desired dimension is mapped and all mappings represent the same semantic role, use native `#tag` syntax directly in `filter` and `group_by`; do not reconstruct it with `make_col` or its physical field path. If mappings represent distinct roles such as caller and downstream service, use the requested role's physical mapped path so native syntax does not coalesce them. Only inspect other physical fields when no mapped correlation tag represents the dimension (see **Dimension Selection: Correlation Tag First** below).
+4. **Resolve dimensions through correlation tags first.** Check the selected dataset's `correlationTags`. When the desired dimension is mapped and all mappings represent the same semantic role, use native `#tag` syntax directly in `filter` and `group_by`; do not reconstruct it with `make_col` or its physical field path. If mappings represent distinct roles such as caller and downstream service, use the requested role's physical mapped path so native syntax does not coalesce them. Only inspect other physical fields when no mapped correlation tag represents the dimension (see **Dimension Selection: Correlation Tag First** below).
 5. Choose output shape:
     - Summary (default) → use `align options(bins: 1)` pattern
     - Time-series (only if user asks for trend/chart) → use `align` with duration pattern
@@ -52,9 +52,9 @@ Metric datasets (interface=metric) store pre-aggregated measurements. They MUST 
 
 For every filter or grouping dimension, use this order:
 
-1. Check the selected input dataset's `correlationTagMappings` for the desired tag.
+1. Check the selected input dataset's `correlationTags` for the desired tag.
 2. If mapped, inspect each mapping's `path.path`. Two mappings are **not** automatically two roles: OpenTelemetry metrics may map `deployment.environment.name` to both `deployment.environment` and `deployment.environment.name`, and `#tag` is still correct there. Treat mappings as distinct roles only when those `path.path` values look like different entities (`parent.*`, `peer.*`, caller vs downstream). When they do not, reference the tag directly in `group_by`: `#k8s.cluster.name` or `#"service.name"`. Where the metric dataset permits a pre-`align` filter (the Prometheus exception below), use the same native tag reference there too.
-3. If those `path.path` values look like distinct entities, use the physical mapped path for the requested role. Dataset search only returns `{tag, path}` — infer the role from the path. For example, Service Edge Metrics maps `service.name` to both `tags."service.name"` and `tags."parent.service.name"`; `#"service.name"` would coalesce caller and parent.
+3. If those `path.path` values look like distinct entities, use the physical mapped path for the requested role. Dataset search only returns `{tag, path: {field, path}}`, so infer the role from the path, and build the field reference with the rule in [opal-join-patterns.md](opal-join-patterns.md#cross-dataset-correlation). For example, Service Edge Metrics maps `service.name` to both `tags."service.name"` and `tags."parent.service.name"`; `#"service.name"` would coalesce caller and parent.
 4. If not mapped, use the physical schema path (`tags.*`, `resource_attributes.*`, `labels.*`, `FIELDS.*`, or a top-level column).
 
 Native `#tag` references resolve and coalesce all mapped backing paths. Do not emit `make_col cluster:string(resource_attributes."k8s.cluster.name")` merely to filter or group by a single-role mapped `k8s.cluster.name` tag. When role matters, use the selected physical mapped path directly.
@@ -118,6 +118,7 @@ make_col p50:histogram_quantile(combined, 0.50),
          p95:histogram_quantile(combined, 0.95),
          p99:histogram_quantile(combined, 0.99)
 make_col p50_ms:round(p50 * 1000, 2), p95_ms:round(p95 * 1000, 2), p99_ms:round(p99 * 1000, 2)
+// align/aggregate already named these columns. This bare-name form is not valid on Event, Interval, or Resource inputs.
 pick_col valid_from, valid_to, k8s_namespace_name, path, p50_ms, p95_ms, p99_ms
 sort desc(p99_ms)
 ```
@@ -128,6 +129,7 @@ Example — user asks for "write throughput by host" against metric `disk.io.ops
 align options(bins: 1), ops_rate:rate(m("disk.io.ops"))
 aggregate total_rate:sum(ops_rate), group_by(host:string(tags."host.name"), direction:string(tags."direction"))
 filter direction = "write"
+// Same as above: valid_from and valid_to here are align/aggregate output columns, not a Resource projection.
 pick_col valid_from, valid_to, host, total_rate
 sort desc(total_rate)
 ```
@@ -332,7 +334,7 @@ sort desc(error_rate)
 
 ### Dimension Selection: Correlation Tag First (CRITICAL)
 
-First inspect `correlationTagMappings`. A mapped dimension should use native `#tag` syntax when all backing paths represent the same semantic concept. This is shorter and more robust for equivalent alternate paths. If the paths represent distinct roles, select the requested role's physical path instead of coalescing them.
+First inspect the dataset's `correlationTags`. A mapped dimension should use native `#tag` syntax when all backing paths represent the same semantic concept. This is shorter and more robust for equivalent alternate paths. If the paths represent distinct roles, select the requested role's physical path instead of coalescing them.
 
 When the desired dimension has no correlation-tag mapping, check the dataset schema for its physical field. The field that holds metric dimensions is NOT the same across all metric datasets. Common fallbacks are:
 
@@ -639,4 +641,4 @@ timewrap 7d, 2, "week"
 - **Use `topk`/`bottomk` after `aggregate` — not `sort` + `limit`.** Always use an aggregate scoring function: `topk 20, max(col)` or `bottomk 10, min(col)`. Never pass a bare column to `topk` — `topk 20, col` is invalid.
 - **Don't `sort` time-series output.** After `align` + `aggregate` (without `options(bins: 1)`), the output is a time series ordered by `valid_from`. Adding `sort desc(value)` scrambles the time axis, breaking chart rendering. Use `sort` only on summary output (`options(bins: 1)`) where each row is a group, not a time bin. For ranking time-series groups, use `topk` instead.
 - **Don't reuse existing column names in `align` or `group_by`.** Check the dataset schema before choosing names. `align` aliases that collide with existing columns cause `"cannot create column X more than once"`. `group_by` aliases that collide cause `"attempting to overwrite existing column"`. For `group_by`, use the bare column name when no casting is needed, or pick a new alias — `group_by(host, datacenter)` is fine, but `group_by(host:string(host))` is rejected because `host` already exists. For `align`, use a distinct alias — `cpu_avg:avg(m("cpu_utilization"))` instead of `cpu:avg(...)` when a `cpu` column already exists.
-- **Don't reconstruct single-role mapped correlation tags.** If `correlationTagMappings` exposes one semantic dimension, use native `#tag` syntax in `filter`/`group_by` instead of a redundant `make_col`. When multiple mappings represent distinct roles, use the requested role's physical mapped path so `#tag` does not coalesce away the distinction. Also use physical paths for dimensions without a mapped correlation tag, and verify every path from the dataset schema.
+- **Don't reconstruct single-role mapped correlation tags.** If `correlationTags` exposes one semantic dimension, use native `#tag` syntax in `filter`/`group_by` instead of a redundant `make_col`. When multiple mappings represent distinct roles, use the requested role's physical mapped path so `#tag` does not coalesce away the distinction. Also use physical paths for dimensions without a mapped correlation tag, and verify every path from the dataset schema.
