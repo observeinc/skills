@@ -2,10 +2,20 @@
   "name": "observe",
   "version": "0.1.11",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+  "author": {
+    "name": "Observe by Snowflake"
+  },
   "skills": "./skills/",
   "interface": {
     "displayName": "Observe by Snowflake",
     "shortDescription": "Observability skills for Observe",
-    "category": "Productivity"
+    "longDescription": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
+    "developerName": "Observe by Snowflake",
+    "category": "Productivity",
+    "capabilities": [
+      "Observability workflows",
+      "Telemetry guidance",
+      "Infrastructure management"
+    ]
   }
 }
