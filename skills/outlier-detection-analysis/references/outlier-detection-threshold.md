@@ -6,12 +6,12 @@ When the user has not specified an explicit threshold, run this pipeline first t
 
 - `datasetId` — required.
 - `metricName` — required when computing from a metric (otherwise the pipeline runs over the dataset directly).
-- `performanceField` — required for non-metric mode. Must be a numeric / duration field. Auto-detect from the schema using the names `duration`, `latency`, `response_time`, `request_duration`, `elapsed_time`, `processing_time`, `execution_time`, `bytes`, `response_size`, `request_size`, `status_code`, `status`. If none match, ask the user.
+- `performanceField` — required for non-metric mode. Must be a numeric / duration field. Auto-detect from the schema using the names `duration`, `latency`, `response_time`, `request_duration`, `elapsed_time`, `processing_time`, `execution_time`, `bytes`, `response_size`, `request_size`, `status_code`, `status`. If the user asked about errors / failures / faults / exceptions / broken behavior, do not run this pipeline: use the SKILL.md error-cohort fallback (`error = true`, or the schema's status equivalent) instead of a duration P95. If they asked about slowness / latency / performance, skip `status_code` and `status` — they measure errors, not duration. If none match: interactive, ask; non-interactive, pick the first numeric/duration field that is not `status_code` / `status` and state it; if none exists, say so and stop. Do not rewrite a slowness question onto `status_code >= 500`.
 - `percentileThreshold` — number in `[50, 99.9]`. Default `95`.
 - `fieldFilter` (optional) — `{field, value}` to scope the pipeline.
 - `timeStart`, `timeEnd` — required.
 
-If any required input is missing or ambiguous, ask the user before running the pipeline. Do not guess.
+If any required input is missing or ambiguous: interactive, ask before running; non-interactive, use the Step 1 fallbacks in SKILL.md, state them, and run. Do not guess, and do not wait for a reply that cannot arrive.
 
 ## Pipeline — non-metric (dataset) mode
 
@@ -75,10 +75,14 @@ P95 is the industry default for performance monitoring because:
 
 If the user said "extremely slow", lean to P99. If they said "any slowness", lean to P75 / P90.
 
-## Confirming with the user
+## Confirming the threshold
 
-Before passing the computed value to the correlation pipeline, summarize the distribution and proposed threshold to the user and ask them to confirm. Example:
+In interactive mode, when `AskUserQuestion` is in the tool list and the user has not already said to proceed, summarize the distribution and proposed threshold and confirm with `AskUserQuestion` before passing the value to the correlation pipeline. Otherwise state the threshold and run; do not stop to wait for a plain-text confirmation. Example:
 
 > Across 124,317 samples of `duration`, P95 = 482ms. I'll use `duration > 482ms` as the "bad" threshold. Confirm?
 
-If the user changes the percentile, operator, or field, re-run this pipeline before continuing.
+In non-interactive mode, do not wait: state the distribution and threshold in the answer and run the correlation. Example:
+
+> Across 124,317 samples of `duration`, P95 = 482ms, so I used `duration > 482ms` as the "bad" threshold.
+
+If the user changes the percentile, operator, or field, re-run this pipeline before running the correlation again.

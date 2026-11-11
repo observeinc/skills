@@ -31,7 +31,20 @@ If `fieldFilter` is present:
 filter <field-opal> = <value-opal>
 ```
 
-Otherwise omit the line entirely. Use `@."Field Name"` quoting for non-identifier names (see `generate-opal`).
+Otherwise omit the line entirely. Use `@."Field Name"` quoting for non-identifier names (see `generate-opal`). The `{field, value}` form cannot express a full-trace cohort; when Step 1 of the skill defaults to span perspective (C), use the snippet below instead of `fieldFilter`.
+
+### Full-trace cohort (span perspective C)
+
+`trace_id` is an excluded _analysis_ field (see [outlier-detection-interpretation](outlier-detection-interpretation.md)) — do not put it in `scalarFields[]` — but it is the grouping key for this cohort.
+
+When Step 1 defaults to (C), substitute this for `{{filter_clause}}`. Do not also apply `filter service_name = "{{service}}"` (that is A). Then continue with the rest of the dataset-mode template so every span in those traces is classified and flattened.
+
+```
+make_col _trace_has_x_error:window(max(if({{service_field_opal}} = {{service_value_opal}} and error = true, 1, 0)), group_by(trace_id))
+filter _trace_has_x_error = 1
+```
+
+Replace `{{service_field_opal}}` / `{{service_value_opal}}` with the service identity the user named (typically `service_name = "X"`). If the schema stores errors as a string or status rather than a boolean `error`, compare to the values it actually has.
 
 ### Sanitized column-name suffix
 
@@ -142,7 +155,7 @@ string(_c__scalar_fields_obj_value), string(_c_attributes_value), string(_c_reso
 
 - **Scalar-only input** — omit `{{empty_fix_steps}}` and `{{complex_flatten_steps}}`; only `_scalar_fields_obj` participates in the flatten / group_by / coalesce.
 - **Complex-only input** — omit `{{scalar_obj_step}}` and `{{scalar_flatten_step}}`; group_by / coalesce reference only the complex fields.
-- **Empty input** — abort and ask the user to specify `fieldsToAnalyze`. Never run the pipeline with no fields.
+- **Empty input** — abort. Never run the pipeline with no fields. Interactive: ask the user to specify `fieldsToAnalyze`. Non-interactive: say so and stop — do not wait.
 
 ## Template — metric mode
 

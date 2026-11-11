@@ -29,7 +29,7 @@ After exclusions, classify each remaining selected field by its type tag:
 - **Complex** — `Object` or `Array` types (the OPAL pipeline will run `flatten_leaves` on these and may need an empty-fix `make_col` first).
 - **Scalar** — everything else (strings, numbers, booleans, durations, timestamps used as categorical). The OPAL pipeline will pack these into a `make_object(...)` and then `flatten_leaves` that bundle.
 
-If both lists are empty after exclusions, abort: there is nothing to analyze; ask the user to specify `fieldsToAnalyze` directly.
+If both lists are empty after exclusions, abort: there is nothing to analyze. Interactive: ask the user to specify `fieldsToAnalyze` directly. Non-interactive: say so and stop — do not wait.
 
 ## Sizing
 

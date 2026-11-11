@@ -185,15 +185,15 @@ sort desc(error_count)
 
 ### Common field names by dataset type
 
-| Dataset type                  | Body/message field      | Level/severity field                   |
-| ----------------------------- | ----------------------- | -------------------------------------- |
-| OTel log records              | body                    | severity_text, severity_number         |
-| K8s container logs (OTel)     | body                    | severity_text, severity_number         |
-| K8s container logs (non-OTel) | body                    | **None** — check schema, do NOT assume |
-| CloudWatch logs               | message or body.message | body.level                             |
-| Span events                   | event_name + attributes | (use parent span status)               |
+| Dataset type                  | Body/message field      | Level/severity field                 |
+| ----------------------------- | ----------------------- | ------------------------------------ |
+| OTel log records              | body                    | severity_text, severity_number       |
+| K8s container logs (OTel)     | body                    | severity_text, severity_number       |
+| K8s container logs (non-OTel) | body                    | Nested — check schema, do NOT assume |
+| CloudWatch logs               | message or body.message | body.level                           |
+| Span events                   | event_name + attributes | (use parent span status)             |
 
-**IMPORTANT**: K8s container log datasets vary. OTel-collected logs typically include `severity_number`/`severity_text`, but Fluentd/Fluent Bit-collected logs often have only `body`, `stream`, `cluster`, `namespace`, `container`, `pod`, `node`, and `attributes` — no severity fields. Always check the target dataset's schema field list before referencing severity fields.
+**IMPORTANT**: K8s container log datasets vary. OTel-collected logs typically include `severity_number`/`severity_text`, but Fluentd/Fluent Bit-collected logs often have only `body`, `stream`, `cluster`, `namespace`, `container`, `pod`, `node`, and `attributes` — no top-level severity fields. The level is often nested instead, e.g. `fields.severity_text` / `fields.severity_number` or `attributes.log_severity`, with values like `E`, `W`, `ERROR`, `warning`. Always check the target dataset's schema field list, including nested objects, before referencing severity fields, and prefer a severity field over matching the body.
 
 ### Log severity levels (OpenTelemetry)
 

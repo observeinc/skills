@@ -444,32 +444,6 @@ JSON schema for the `heatmap` visualizationTemplate object. The `visualizationTe
                                 }
                             }
                         },
-                        "scaleType": {
-                            "description": "The scale configuration for the axis. Controls how data values are mapped to positions on the axis.",
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "anyOf": [
-                                        {
-                                            "type": "string",
-                                            "const": "log",
-                                            "description": "Uses a logarithmic scale. Good for data that spans multiple orders of magnitude."
-                                        },
-                                        {
-                                            "type": "string",
-                                            "const": "linear",
-                                            "description": "Uses a linear scale. The standard scale type for most data."
-                                        }
-                                    ],
-                                    "description": "The type of scale to use for this axis. Determines how data values are mapped to positions on the axis."
-                                },
-                                "base": {
-                                    "description": "The base for logarithmic scales. Only used when type is 'log'. Default is 10.",
-                                    "type": "number"
-                                }
-                            },
-                            "required": ["type"]
-                        },
                         "show": {
                             "default": true,
                             "description": "Whether to show the axis. Set to false to hide the axis completely.",

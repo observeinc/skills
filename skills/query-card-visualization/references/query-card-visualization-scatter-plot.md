@@ -291,30 +291,50 @@ JSON schema for the `scatterPlot` visualizationTemplate object. The `visualizati
                             }
                         },
                         "scaleType": {
-                            "description": "The scale configuration for the axis. Controls how data values are mapped to positions on the axis.",
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "anyOf": [
-                                        {
-                                            "type": "string",
-                                            "const": "log",
-                                            "description": "Uses a logarithmic scale. Good for data that spans multiple orders of magnitude."
+                            "description": "Axis scale. Set use true when the user asks for a logarithmic axis. type log is accepted and stored as use true. Omit for a linear axis.",
+                            "anyOf": [
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "use": {
+                                            "type": "boolean",
+                                            "description": "True for a logarithmic axis. Set true when the user asks for a log scale. False keeps a linear axis."
                                         },
-                                        {
-                                            "type": "string",
-                                            "const": "linear",
-                                            "description": "Uses a linear scale. The standard scale type for most data."
+                                        "base": {
+                                            "description": "Logarithm base. Only read when use is true. Default is 10.",
+                                            "type": "number"
                                         }
-                                    ],
-                                    "description": "The type of scale to use for this axis. Determines how data values are mapped to positions on the axis."
+                                    },
+                                    "required": ["use"],
+                                    "description": "Logarithmic axis flag the chart renderer reads."
                                 },
-                                "base": {
-                                    "description": "The base for logarithmic scales. Only used when type is 'log'. Default is 10.",
-                                    "type": "number"
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "log",
+                                                    "description": "Logarithmic axis. Rewritten to use: true."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "linear",
+                                                    "description": "Linear axis. Rewritten to use: false."
+                                                }
+                                            ],
+                                            "description": "Legacy scale name. Prefer use."
+                                        },
+                                        "base": {
+                                            "description": "Logarithm base. Only used when type is log. Default is 10.",
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": ["type"],
+                                    "description": "Legacy scale shape. type log is rewritten to use: true before the chart is drawn."
                                 }
-                            },
-                            "required": ["type"]
+                            ]
                         },
                         "show": {
                             "default": true,
@@ -432,30 +452,50 @@ JSON schema for the `scatterPlot` visualizationTemplate object. The `visualizati
                             }
                         },
                         "scaleType": {
-                            "description": "The scale configuration for the axis. Controls how data values are mapped to positions on the axis.",
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "anyOf": [
-                                        {
-                                            "type": "string",
-                                            "const": "log",
-                                            "description": "Uses a logarithmic scale. Good for data that spans multiple orders of magnitude."
+                            "description": "Axis scale. Set use true when the user asks for a logarithmic axis. type log is accepted and stored as use true. Omit for a linear axis.",
+                            "anyOf": [
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "use": {
+                                            "type": "boolean",
+                                            "description": "True for a logarithmic axis. Set true when the user asks for a log scale. False keeps a linear axis."
                                         },
-                                        {
-                                            "type": "string",
-                                            "const": "linear",
-                                            "description": "Uses a linear scale. The standard scale type for most data."
+                                        "base": {
+                                            "description": "Logarithm base. Only read when use is true. Default is 10.",
+                                            "type": "number"
                                         }
-                                    ],
-                                    "description": "The type of scale to use for this axis. Determines how data values are mapped to positions on the axis."
+                                    },
+                                    "required": ["use"],
+                                    "description": "Logarithmic axis flag the chart renderer reads."
                                 },
-                                "base": {
-                                    "description": "The base for logarithmic scales. Only used when type is 'log'. Default is 10.",
-                                    "type": "number"
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "anyOf": [
+                                                {
+                                                    "type": "string",
+                                                    "const": "log",
+                                                    "description": "Logarithmic axis. Rewritten to use: true."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "const": "linear",
+                                                    "description": "Linear axis. Rewritten to use: false."
+                                                }
+                                            ],
+                                            "description": "Legacy scale name. Prefer use."
+                                        },
+                                        "base": {
+                                            "description": "Logarithm base. Only used when type is log. Default is 10.",
+                                            "type": "number"
+                                        }
+                                    },
+                                    "required": ["type"],
+                                    "description": "Legacy scale shape. type log is rewritten to use: true before the chart is drawn."
                                 }
-                            },
-                            "required": ["type"]
+                            ]
                         },
                         "show": {
                             "default": true,
