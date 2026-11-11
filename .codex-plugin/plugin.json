@@ -1,6 +1,6 @@
 {
   "name": "observe",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "Agent skills and MCP configuration for deploying and managing Observe's observability infrastructure",
   "author": {
     "name": "Observe by Snowflake"

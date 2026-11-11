@@ -305,32 +305,6 @@ JSON schema for the `changeOverTime` visualizationTemplate object. The `visualiz
                                 }
                             }
                         },
-                        "scaleType": {
-                            "description": "The scale configuration for values. Controls how values are mapped to visual properties.",
-                            "type": "object",
-                            "properties": {
-                                "type": {
-                                    "anyOf": [
-                                        {
-                                            "type": "string",
-                                            "const": "log",
-                                            "description": "Uses a logarithmic scale. Good for data that spans multiple orders of magnitude."
-                                        },
-                                        {
-                                            "type": "string",
-                                            "const": "linear",
-                                            "description": "Uses a linear scale. The standard scale type for most data."
-                                        }
-                                    ],
-                                    "description": "The type of scale to use for values. Determines how values are mapped to visual properties."
-                                },
-                                "base": {
-                                    "description": "The base for logarithmic scales. Only used when type is 'log'. Default is 10.",
-                                    "type": "number"
-                                }
-                            },
-                            "required": ["type"]
-                        },
                         "format": {
                             "description": "The formatting options for values. Controls how values are displayed in the visualization."
                         },
